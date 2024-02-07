@@ -1,6 +1,7 @@
 import pandas as pd
 from fairlearn.datasets import fetch_adult
 from fairlearn.metrics import selection_rate, MetricFrame, false_positive_rate, false_negative_rate
+from matplotlib import pyplot as plt
 from sklearn.metrics import accuracy_score, precision_score
 from sklearn.tree import DecisionTreeClassifier
 
@@ -11,8 +12,10 @@ data = fetch_adult(as_frame=True)
 X = pd.get_dummies(data.data)
 
 y_true = (data.target == '>50K') * 1
+print(y_true)
 
 sex = data.data['sex']
+counts = sex.value_counts()
 
 print(sex.value_counts(), "\n")
 
@@ -49,3 +52,7 @@ metric_frame.by_group.plot.bar(
     figsize=[12, 8],
     title="Show all metrics",
 )
+
+plt.show()
+
+print(len(X))

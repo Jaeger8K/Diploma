@@ -1,9 +1,11 @@
 import numpy as np
 import seaborn as sn
+from fairlearn.metrics import false_positive_rate, false_negative_rate, selection_rate, MetricFrame
 from matplotlib import pyplot as plt
+from fairlearn.datasets import fetch_adult
 from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report
+from sklearn.metrics import accuracy_score, classification_report, precision_score
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.neural_network import MLPClassifier
 from sklearn import svm
@@ -39,35 +41,52 @@ def choose_classifier(model_selection):
     elif model_selection == "SVM":  # needs work, doesnt terminate
         m = svm.SVC()
         m.fit(X_train, y_train)
+    #elif model_selection == "DecisionTreeClassifier(min_samples_leaf=10, max_depth=4)"
+        #m = DecisionTreeClassifier(min_samples_leaf=10, max_depth=4)
+        #m.fit
 
     return m, m.predict(X_test)
 
 
-def show_metrics(y_test, y_pred):
-    # Calculate accuracy
-    accuracy = accuracy_score(y_test, y_pred)
+def show_metrics(y_test, y_pred, classifier):
+    #target_names = ['above 50k', 'below 50k']
+    #print(classification_report(y_test, y_pred, target_names=target_names))
 
-    # Print the accuracy
-    print(f'Accuracy: {accuracy}', "\n")
+    data = fetch_adult(as_frame=True)
 
-    cnf_matrix = metrics.confusion_matrix(y_test, y_pred)
+    X = pd.get_dummies(data.data)
 
-    class_names = [0, 1]  # name  of classes
-    fig, ax = plt.subplots()
-    tick_marks = np.arange(len(class_names))
-    plt.xticks(tick_marks, class_names)
-    plt.yticks(tick_marks, class_names)
-    # create heatmap
-    sn.heatmap(pd.DataFrame(cnf_matrix), annot=True, cmap="YlGnBu", fmt='g')
-    ax.xaxis.set_label_position("top")
-    plt.tight_layout()
-    plt.title('Confusion matrix', y=1.1)
-    plt.ylabel('Actual label')
-    plt.xlabel('Predicted label')
+    y_true = (data.target == '>50K') * 1
+
+    sex = data.data['sex']
+
+    classifier.fit(X, y_true)
+
+    y_pred = classifier.predict(X)
+
+    mf = MetricFrame(metrics=accuracy_score, y_true=y_true, y_pred=y_pred, sensitive_features=sex)
+
+    sr = MetricFrame(metrics=selection_rate, y_true=y_true, y_pred=y_pred, sensitive_features=sex)
+
+    metrics = {
+        "accuracy": accuracy_score,
+        "precision": precision_score,
+        "false positive rate": false_positive_rate,
+        "false negative rate": false_negative_rate,
+        "selection rate": selection_rate,
+    }
+    metric_frame = MetricFrame(
+        metrics=metrics, y_true=y_true, y_pred=y_pred, sensitive_features=sex
+    )
+    metric_frame.by_group.plot.bar(
+        subplots=True,
+        layout=[3, 3],
+        legend=False,
+        figsize=[12, 8],
+        title="Show all metrics",
+    )
+
     plt.show()
-
-    target_names = ['above 50k', 'below 50k']
-    print(classification_report(y_test, y_pred, target_names=target_names))
 
 
 def partition_results(lower_bound, upper_bound):
@@ -278,14 +297,14 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, r
 
 model, y_pred = choose_classifier('LogisticRegression')
 
-information()
+# information()
 
 y_pred_proba = model.predict_proba(X_test)
 
-# show_metrics(y_test, y_pred)
+show_metrics(y_test, y_pred, model)
 
 # analysis()
 
-counterfactual(0.0, 0.1)
+# counterfactual(0.0, 0.1)
 
 # extract_predictions()
