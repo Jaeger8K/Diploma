@@ -262,28 +262,10 @@ def analysis():
     plt.show()
 
 
-'''
-    # Plotting
-    plt.plot(margins, percentages, marker='o', linestyle='-', color='b')
-    plt.title('percentage of false results/ total results vs. probability margin')
-    plt.xlabel('probability margin')
-    plt.ylabel('percentage')
-    plt.grid(True)
-    plt.show()
-
-    # Plotting
-    plt.plot(margins, false_percentages, marker='o', linestyle='-', color='b')
-    plt.title('percentage of false results/ total false results vs. probability margin')
-    plt.xlabel('probability margin')
-    plt.ylabel('percentage')
-    plt.grid(True)
-    plt.show()
-'''
-
 # Load the CSV file into a DataFrame
 X = pd.read_csv('normalized_features.csv')
 y = pd.read_csv('y.csv')
-y = y['income'].ravel()
+y = y['income'].to_numpy()
 
 male_tag = X.iloc[0]['sex']
 female_tag = X.iloc[4]['sex']
