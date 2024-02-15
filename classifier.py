@@ -24,20 +24,21 @@ def choose_classifier(model_selection):
         m = LogisticRegression(random_state=16)
         m.fit(X_train, y_train)
     elif model_selection == "RandomForest":  # works
-        m = RandomForestClassifier(max_depth=2, random_state=0)
+        m = RandomForestClassifier(max_depth=5, random_state=0)
         m.fit(X_train, y_train)
     elif model_selection == "GaussianNB":  # works
         m = GaussianNB()
         m = m.fit(X_train, y_train)
+    elif model_selection == "MLPClassifier":  # works, needs more iterations, takes time
+        m = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1, max_iter=350)
+        m.fit(X_train, y_train)
     elif model_selection == "Kmeans":  # needs work, 'KMeans' object has no attribute 'predict_proba'
         m = KMeans(n_clusters=2, random_state=0, n_init="auto")
         m.fit(X_train)
     elif model_selection == "LinearSVC":  # works 'LinearSVC' object has no attribute 'predict_proba'. Did you mean: '_predict_proba_lr'?
         m = LinearSVC(dual='auto')
         m.fit(X_train, y_train)
-    elif model_selection == "MLPClassifier":  # works, needs more iterations, takes time
-        m = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1, max_iter=350)
-        m.fit(X_train, y_train)
+
     elif model_selection == "SVM":  # needs work, doesnt terminate
         m = svm.SVC()
         m.fit(X_train, y_train)
@@ -48,7 +49,7 @@ def choose_classifier(model_selection):
     return m, m.predict(X_test)
 
 
-def show_metrics(y_test, y_pred, classifier):
+'''def show_metrics(y_test, y_pred, classifier):
     #target_names = ['above 50k', 'below 50k']
     #print(classification_report(y_test, y_pred, target_names=target_names))
 
@@ -87,7 +88,7 @@ def show_metrics(y_test, y_pred, classifier):
     )
 
     plt.show()
-
+'''
 
 def partition_results(lower_bound, upper_bound):
     indexes = [idx for idx, probabilities in enumerate(y_pred_proba) if
@@ -128,7 +129,7 @@ def show_probabilities(prob, new_prob):
 
 
 def analyse_results(pred, prob, new_pred, new_prob, true_label):
-    # show_probabilities(prob, new_prob)
+    show_probabilities(prob, new_prob)
 
     equal = 0
     first = 0
@@ -295,16 +296,16 @@ test_size = 0.3
 
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=1)
 
-model, y_pred = choose_classifier('LogisticRegression')
+model, y_pred = choose_classifier('RandomForest')
 
-# information()
+information()
 
 y_pred_proba = model.predict_proba(X_test)
 
-show_metrics(y_test, y_pred, model)
+# show_metrics(y_test, y_pred, model)
 
 # analysis()
 
-# counterfactual(0.0, 0.1)
+counterfactual(0.0, 0.1)
 
 # extract_predictions()
