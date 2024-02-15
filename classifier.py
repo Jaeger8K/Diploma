@@ -2,10 +2,7 @@ import numpy as np
 import seaborn as sn
 from fairlearn.metrics import false_positive_rate, false_negative_rate, selection_rate, MetricFrame
 from matplotlib import pyplot as plt
-from fairlearn.datasets import fetch_adult
-from sklearn import metrics
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, classification_report, precision_score
 from sklearn.model_selection import train_test_split, cross_val_score
 from sklearn.neural_network import MLPClassifier
 from sklearn import svm
@@ -298,7 +295,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, r
 
 model, y_pred = choose_classifier('RandomForest')
 
-information()
+# information()
 
 y_pred_proba = model.predict_proba(X_test)
 
@@ -306,6 +303,6 @@ y_pred_proba = model.predict_proba(X_test)
 
 # analysis()
 
-counterfactual(0.0, 0.1)
+counterfactual(0.0, 1)
 
 # extract_predictions()
