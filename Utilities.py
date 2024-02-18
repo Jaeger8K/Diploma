@@ -1,6 +1,8 @@
+import numpy as np
 import pandas as pd
 from fairlearn.datasets import fetch_adult
 from matplotlib import pyplot as plt
+from scipy.stats import ttest_ind
 from sklearn.cluster import KMeans
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -51,7 +53,7 @@ def choose_classifier(model_selection):
     m = 0
 
     if model_selection == "1":  # works
-        m = LogisticRegression(random_state=16)
+        m = LogisticRegression(random_state=16, max_iter=1000)
 
     elif model_selection == "2":  # works
         m = RandomForestClassifier(max_depth=5, random_state=0)
@@ -77,39 +79,17 @@ def choose_classifier(model_selection):
     return m
 
 
-def test_adults(y_test, y_pred, x_test, reverse):
+def calculate_mertics(y_test, y_pred, x_test, unp_group, fav_out):
     # Calculate the accuracy
     accuracy = accuracy_score(y_test, y_pred)
     print("Accuracy of the classifier:", accuracy)
 
-    if not reverse:
-
-        disparate_impact = ((y_pred == '>50K') & (x_test['sex_Female'] == True)).sum() / ((y_pred == '>50K') & (x_test['sex_Female'] == False)).sum()
-        # print(((y_pred == '>50K') & (x_test['sex_Female'] == True)).sum())
-        # print(((y_pred == '>50K') & (x_test['sex_Female'] == False)).sum())
-        print("Disparate Impact Ratio:", disparate_impact)
-
-    elif reverse:
-
-        disparate_impact = ((y_pred == '>50K') & (x_test['sex_Female'] == False)).sum() / ((y_pred == '>50K') & (x_test['sex_Female'] == True)).sum()
-        print("Disparate Impact Ratio:", disparate_impact)
-
-    '''    # Calculate disparate impact ratio
-        # Mean of favorable outcomes for protected group
-        fav_outcomes_prot = (y_pred[x_test['sex_Female'] == True] == '>50K').mean()
-        # Mean of favorable outcomes for non-protected group
-        fav_outcomes_non_prot = (y_pred[x_test['sex_Female'] == False] == '>50K').mean()
-
-        disparate_impact = fav_outcomes_prot / fav_outcomes_non_prot
-        print("Disparate Impact Ratio:", disparate_impact)
-        #print(len(y_pred[x_test['sex_Female'] == True] == '>50K'))
-        #print(len(y_pred[x_test['sex_Female'] == False] == '>50K'))
-
-        # Filter predictions where y_pred is '>50K' and X_test['sex_Female'] is True
-        condition = (y_pred == '>50K') & (x_test['sex_Female'] == True)
-        print("Sum of corresponding samples:", condition.sum())
-        condition = (y_pred == '>50K') & (x_test['sex_Female'] == False)
-        print("Sum of corresponding samples:", condition.sum())'''
+    a = ((y_pred == fav_out) & (x_test[unp_group] == True)).sum()
+    b = ((y_pred == fav_out) & (x_test[unp_group] == False)).sum()
+    disparate_impact = a / b
+    # print(((y_pred == '>50K') & (x_test['sex_Female'] == True)).sum())
+    # print(((y_pred == '>50K') & (x_test['sex_Female'] == False)).sum())
+    print("Disparate Impact Ratio:", disparate_impact)
 
 
 def show_metrics_adults(classifier):
@@ -121,6 +101,8 @@ def show_metrics_adults(classifier):
     classifier.fit(X, y_true)
 
     y_pred = classifier.predict(X)
+
+    adult_pie(X, y_true)
 
     # Analyze metrics using MetricFrame
     metrics = {
@@ -142,19 +124,20 @@ def show_metrics_adults(classifier):
         title="Show all metrics",
     )
 
-    # Customize plots with ylim
-    metric_frame.by_group.plot(
-        kind="bar",
-        ylim=[0, 1],
-        subplots=True,
-        layout=[3, 3],
-        legend=False,
-        figsize=[12, 8],
-        title="Show all metrics with assigned y-axis range",
-    )
+    plt.show()
 
-    # Customize plots with colormap
-    metric_frame.by_group.plot(
+    """    # Customize plots with ylim
+        metric_frame.by_group.plot(
+            kind="bar",
+            ylim=[0, 1],
+            subplots=True,
+            layout=[3, 3],
+            legend=False,
+            figsize=[12, 8],
+            title="Show all metrics with assigned y-axis range",
+        )
+            # Customize plots with colormap
+        metric_frame.by_group.plot(
         kind="bar",
         subplots=True,
         layout=[3, 3],
@@ -163,18 +146,7 @@ def show_metrics_adults(classifier):
         colormap="Accent",
         title="Show all metrics in Accent colormap",
     )
-
-    # Customize plots with kind (note that we are only plotting the "count" metric here because we are showing a pie chart)
-    metric_frame.by_group[["count"]].plot(
-        kind="pie",
-        subplots=True,
-        layout=[1, 1],
-        legend=False,
-        figsize=[12, 8],
-        title="Show count metric in pie chart",
-    )
-
-    # Saving plots
+        # Saving plots
     fig = metric_frame.by_group[["count"]].plot(
         kind="pie",
         subplots=True,
@@ -187,4 +159,51 @@ def show_metrics_adults(classifier):
     # Don't save file during doc build
     if "__file__" in locals():
         fig[0][0].figure.savefig("filename.png")
+        
+        # Customize plots with kind (note that we are only plotting the "count" metric here because we are showing a pie chart)
+    metric_frame.by_group[["count"]].plot(
+        kind="pie",
+        subplots=True,
+        layout=[1, 1],
+        legend=False,
+        figsize=[12, 8],
+        title="Show count metric in pie chart",
+    )
+    """
+
+
+def adult_pie(features, classes, fav_pred, unfav_pred, my_title):
+    plt.title(my_title)
+    rich_women = sum(classes[features['sex_Female'] == True] == fav_pred)
+    poor_women = sum(classes[features['sex_Female'] == True] == unfav_pred)
+    rich_men = sum(classes[features['sex_Female'] == False] == fav_pred)
+    poor_men = sum(classes[features['sex_Female'] == False] == unfav_pred)
+
+    my_labels = ["Rich women", "Rich men", "Poor women", "Poor men"]
+    plt.pie(np.array([rich_women, rich_men, poor_women, poor_men]), labels=my_labels,
+            autopct=lambda p: '{:.0f}'.format(p * len(features) / 100))
+
     plt.show()
+
+
+def student_ttest(data, label, label_values):
+    group1 = data[data[label] == label_values[0]]
+    group1 = group1.drop(columns=[label])
+
+    group2 = data[data[label] == label_values[1]]
+    group2 = group2.drop(columns=[label])
+
+    # Perform the t-test
+    t_statistic, p_value = ttest_ind(group1, group2)
+
+    print(data.columns)
+
+    results_df = pd.DataFrame({'Attribute': group1.columns, 'T-statistic': t_statistic, 'P-value': p_value})
+
+    # Sort the DataFrame by the absolute T-statistic value in descending order
+    results_df['Abs_T-statistic'] = abs(results_df['T-statistic'])
+    results_df = results_df.sort_values(by='Abs_T-statistic', ascending=False)
+
+    print(results_df)
+
+    temp = results_df.index.tolist()

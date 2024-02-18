@@ -1,6 +1,4 @@
 import numpy as np
-import seaborn as sn
-from fairlearn.metrics import false_positive_rate, false_negative_rate, selection_rate, MetricFrame
 from matplotlib import pyplot as plt
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split, cross_val_score
@@ -39,9 +37,9 @@ def choose_classifier(model_selection):
     elif model_selection == "SVM":  # needs work, doesnt terminate
         m = svm.SVC()
         m.fit(X_train, y_train)
-    #elif model_selection == "DecisionTreeClassifier(min_samples_leaf=10, max_depth=4)"
-        #m = DecisionTreeClassifier(min_samples_leaf=10, max_depth=4)
-        #m.fit
+    # elif model_selection == "DecisionTreeClassifier(min_samples_leaf=10, max_depth=4)"
+    # m = DecisionTreeClassifier(min_samples_leaf=10, max_depth=4)
+    # m.fit
 
     return m, m.predict(X_test)
 
@@ -86,6 +84,7 @@ def choose_classifier(model_selection):
 
     plt.show()
 '''
+
 
 def partition_results(lower_bound, upper_bound):
     indexes = [idx for idx, probabilities in enumerate(y_pred_proba) if
