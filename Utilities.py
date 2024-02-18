@@ -26,25 +26,45 @@ def export_csv(dataframe, name):
     dataframe.to_csv(name, index=False)
 
 
-def preprocess_adults(data, test_size):
-    # Assuming 'df' is your DataFrame with numerical columns to be normalized
-    # Create a MinMaxScaler object
+def preprocess_data(dataframe, test_size, class_label):
+
     scaler = MinMaxScaler()
 
-    # Specify the numerical columns to be normalized
-    numerical_columns = ['age', 'fnlwgt', 'education-num', 'capital-gain', 'capital-loss', 'hours-per-week']
+    # Assuming df is your DataFrame
+    numerical_columns = dataframe.select_dtypes(include=['number']).columns.tolist()
 
-    # Fit the scaler on the numerical data
-    scaler.fit(data[numerical_columns])
+    scaler.fit(dataframe[numerical_columns])
 
     # Transform and replace the original numerical data with the normalized values
-    data[numerical_columns] = scaler.transform(data[numerical_columns])
+    dataframe[numerical_columns] = scaler.transform(dataframe[numerical_columns])
 
-    X = data.drop('class', axis=1)  # Drop the 'class' column to get features (X)
-    y = data['class']  # Extract the 'class' column as the target variable (y)
+    X = dataframe.drop(class_label, axis=1)  # Drop the 'class' column to get features (X)
+    y = dataframe[class_label]  # Extract the 'class' column as the target variable (y)
 
     x_dummies = pd.get_dummies(X)
-    # y_dummies = pd.get_dummies(y)
+
+    return train_test_split(x_dummies, y, test_size=test_size, random_state=1)
+
+
+def preprocess_credit_risk(test_size):
+    credit_risk_df = pd.read_csv('Datasets/credit_risk_dataset.csv')
+
+    credit_risk_df = credit_risk_df.dropna()
+
+    scaler = MinMaxScaler()
+
+    numerical_columns = ['person_age', 'person_income', 'person_emp_length', 'loan_amnt', 'loan_int_rate',
+                         'loan_percent_income', 'cb_person_cred_hist_length']
+
+    scaler.fit(credit_risk_df[numerical_columns])
+
+    # Transform and replace the original numerical data with the normalized values
+    credit_risk_df[numerical_columns] = scaler.transform(credit_risk_df[numerical_columns])
+
+    X = credit_risk_df.drop('cb_person_default_on_file', axis=1)  # Drop the 'class' column to get features (X)
+    y = credit_risk_df['cb_person_default_on_file']  # Extract the 'class' column as the target variable (y)
+
+    x_dummies = pd.get_dummies(X)
 
     return train_test_split(x_dummies, y, test_size=test_size, random_state=1)
 

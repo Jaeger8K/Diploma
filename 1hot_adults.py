@@ -1,7 +1,8 @@
 import numpy as np
 from fairlearn.datasets import fetch_adult
 
-from Utilities import calculate_mertics, preprocess_adults, choose_classifier, show_metrics_adults, adult_pie
+from Utilities import calculate_mertics, choose_classifier, show_metrics_adults, adult_pie, \
+    preprocess_data
 
 
 def final_prediction(pred1, pred2, x_test, fav, unfav, unpriv):
@@ -33,7 +34,6 @@ def final_prediction(pred1, pred2, x_test, fav, unfav, unpriv):
 
 
 def attribute_swap_test(unpriv, priv, fav, unfav):
-
     # X_test[unpriv] = ~X_test[unpriv]
     # X_test[priv] = ~X_test[priv]
 
@@ -60,7 +60,6 @@ def attribute_swap_test(unpriv, priv, fav, unfav):
 
 
 def only_priv_attribute(unpriv, priv, fav, unfav):
-
     X_test_mod[unpriv] = False
     X_test_mod[priv] = True
 
@@ -76,7 +75,6 @@ def only_priv_attribute(unpriv, priv, fav, unfav):
 
 
 def only_unpriv_attribute(unpriv, priv, fav, unfav):
-
     X_test_mod[unpriv] = True
     X_test_mod[priv] = False
 
@@ -95,7 +93,7 @@ data = fetch_adult(as_frame=True)
 
 dataframe = data.frame
 
-X_train, X_test, y_train, y_test = preprocess_adults(dataframe, 0.3)
+X_train, X_test, y_train, y_test = preprocess_data(dataframe, 0.3, 'class')
 
 classifier = choose_classifier("1")
 
