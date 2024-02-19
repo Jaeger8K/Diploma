@@ -15,3 +15,5 @@ pred1 = classifier.predict(X_test)
 
 accuracy = accuracy_score(y_test, pred1)
 print("Accuracy of the classifier:", accuracy)
+
+

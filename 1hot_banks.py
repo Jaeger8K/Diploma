@@ -1,11 +1,12 @@
 import pandas as pd
 from sklearn.metrics import accuracy_score
 
-from Utilities import  choose_classifier, preprocess_data
+from Utilities import choose_classifier, preprocess_data
 
-data = pd.read_csv('Datasets/bank-full.csv', delimiter=';')
+data = pd.read_csv('Datasets/bank_dataset.csv')
+data = data.dropna()
 
-X_train, X_test, y_train, y_test = preprocess_data(data, 0.3,'y')
+X_train, X_test, y_train, y_test = preprocess_data(data, 0.3, 'y')
 
 classifier = choose_classifier("4")
 
