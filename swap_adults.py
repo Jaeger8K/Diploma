@@ -1,14 +1,13 @@
 import numpy as np
 from fairlearn.datasets import fetch_adult
+from matplotlib import pyplot as plt
 
 from Utilities import calculate_mertics, choose_classifier, show_metrics_adults, adult_pie, \
-    preprocess_data
+    preprocess_data, partitioning
 
 
 def final_prediction(pred1, pred2, x_test, fav, unfav, unpriv):
     final_predictions = np.array([None] * len(pred2))
-
-    # print(final_predictions)
 
     counter = 0
     for value1, value2, (_, row) in zip(pred1, pred2, x_test.iterrows()):
@@ -29,7 +28,6 @@ def final_prediction(pred1, pred2, x_test, fav, unfav, unpriv):
             final_predictions[counter] = value2
         counter = counter + 1
 
-    # print(final_predictions)
     return final_predictions
 
 
@@ -44,9 +42,13 @@ def attribute_swap_test(unpriv, priv, fav, unfav):
 
     print("\nResults after swapping the protected attribute values.\n")
 
+    # calculate_mertics(y_test, pred2, X_test, priv, fav)
     calculate_mertics(y_test, pred2, X_test_mod, priv, fav)
 
-    print(f"\nDifferent predictions: {sum(pred1 != pred2)}")
+    # print(f"\nDifferent predictions: {sum(pred1 != pred2)}")
+
+    # adult_pie(X_test, pred2, '>50K', '<=50K', 'pred2 data')
+    adult_pie(X_test_mod, pred2, '>50K', '<=50K', 'swapped values for protected attribute')
 
 
 '''
@@ -89,16 +91,61 @@ def only_unpriv_attribute(unpriv, priv, fav, unfav):
     print(f"\nDifferent predictions: {sum(pred1 != pred2)}")
 
 
+def attribute_swap_and_critical(unpriv, priv, fav, lower_bound, upper_bound):
+    pred3 = classifier.predict(X_test_mod)
+
+    indexes = partitioning(lower_bound, upper_bound, classifier.predict_proba(X_test_mod))
+    feature_part = X_test_mod.iloc[indexes]
+
+    for iteration_number, (index, row) in enumerate(feature_part.iterrows(), start=0):
+
+        if row['sex_Female']:
+            pred3[indexes[iteration_number]] = '<=50K'
+
+        elif row['sex_Male']:
+            pred3[indexes[iteration_number]] = '>50K'
+
+    print("\nResults after clearing critical region.\n")
+
+    calculate_mertics(y_test, pred3, X_test_mod, priv, fav)
+
+    adult_pie(X_test_mod, pred3, '>50K', '<=50K', 'swapped values and critical region')
+
+
+def critical_region_test(unpriv, priv, fav, lower_bound, upper_bound, ):
+    pred4 = classifier.predict(X_test)
+
+    indexes = partitioning(lower_bound, upper_bound, classifier.predict_proba(X_test))
+    feature_part = X_test.iloc[indexes]
+
+    for iteration_number, (index, row) in enumerate(feature_part.iterrows(), start=0):
+
+        if row['sex_Female']:
+            pred4[indexes[iteration_number]] = '>50K'
+
+        elif row['sex_Male']:
+            pred4[indexes[iteration_number]] = '<=50K'
+
+    print("\nResults for critical region alone.\n")
+
+    calculate_mertics(y_test, pred4, X_test, unpriv, fav)
+
+    adult_pie(X_test, pred4, '>50K', '<=50K', 'critical region test')
+
+
 data = fetch_adult(as_frame=True)
 
 dataframe = data.frame
 
 X_train, X_test, y_train, y_test = preprocess_data(dataframe, 0.3, 'class')
 
-classifier = choose_classifier("1")
+classifier = choose_classifier("5")
 
 classifier.fit(X_train, y_train)
 pred1 = classifier.predict(X_test)
+
+adult_pie(X_test, y_test, '>50K', '<=50K', 'actual data')
+adult_pie(X_test, pred1, '>50K', '<=50K', 'unaltered results')
 
 print()
 print(classifier)
@@ -108,7 +155,9 @@ calculate_mertics(y_test, pred1, X_test, 'sex_Female', '>50K')
 X_test_mod = X_test.copy()
 
 attribute_swap_test('sex_Female', 'sex_Male', '>50K', '<=50K')
-only_priv_attribute('sex_Female', 'sex_Male', '>50K', '<=50K')
-only_unpriv_attribute('sex_Female', 'sex_Male', '>50K', '<=50K')
+# only_priv_attribute('sex_Female', 'sex_Male', '>50K', '<=50K')
+# only_unpriv_attribute('sex_Female', 'sex_Male', '>50K', '<=50K')
+attribute_swap_and_critical('sex_Female', 'sex_Male', '>50K', 0, 0.35)
+critical_region_test('sex_Female', 'sex_Male', '>50K', 0, 0.60)
 
 # show_metrics_adults(classifier)

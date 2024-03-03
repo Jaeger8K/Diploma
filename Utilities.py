@@ -22,16 +22,28 @@ from fairlearn.metrics import (
 )
 
 
+def handle_age(data, label, low, high):
+    # Define conditions and corresponding values
+    conditions = [
+        data[label] <= low,
+        (data[label] > low) & (data[label] <= high),
+        data[label] > high
+    ]
+    values = ['young', 'adult', 'elder']
+
+    # Update the 'person_age' column based on conditions
+    data[label] = np.select(conditions, values, default=data[label])
+
+
 def export_csv(dataframe, name):
     dataframe.to_csv(name, index=False)
 
 
 def preprocess_data(dataframe, test_size, class_label):
-
-    scaler = MinMaxScaler()
-
     # Assuming df is your DataFrame
     numerical_columns = dataframe.select_dtypes(include=['number']).columns.tolist()
+
+    scaler = MinMaxScaler()
 
     scaler.fit(dataframe[numerical_columns])
 
@@ -40,29 +52,6 @@ def preprocess_data(dataframe, test_size, class_label):
 
     X = dataframe.drop(class_label, axis=1)  # Drop the 'class' column to get features (X)
     y = dataframe[class_label]  # Extract the 'class' column as the target variable (y)
-
-    x_dummies = pd.get_dummies(X)
-
-    return train_test_split(x_dummies, y, test_size=test_size, random_state=1)
-
-
-def preprocess_credit_risk(test_size):
-    credit_risk_df = pd.read_csv('Datasets/credit_risk_dataset.csv')
-
-    credit_risk_df = credit_risk_df.dropna()
-
-    scaler = MinMaxScaler()
-
-    numerical_columns = ['person_age', 'person_income', 'person_emp_length', 'loan_amnt', 'loan_int_rate',
-                         'loan_percent_income', 'cb_person_cred_hist_length']
-
-    scaler.fit(credit_risk_df[numerical_columns])
-
-    # Transform and replace the original numerical data with the normalized values
-    credit_risk_df[numerical_columns] = scaler.transform(credit_risk_df[numerical_columns])
-
-    X = credit_risk_df.drop('cb_person_default_on_file', axis=1)  # Drop the 'class' column to get features (X)
-    y = credit_risk_df['cb_person_default_on_file']  # Extract the 'class' column as the target variable (y)
 
     x_dummies = pd.get_dummies(X)
 
@@ -192,6 +181,14 @@ def show_metrics_adults(classifier):
     """
 
 
+def partitioning(lower_bound, upper_bound, classifier_prob):
+    indexes = [idx for idx, probabilities in enumerate(classifier_prob) if
+               lower_bound < np.abs(probabilities[0] - probabilities[1]) < upper_bound]
+    # print(len(indexes))
+
+    return indexes
+
+
 def adult_pie(features, classes, fav_pred, unfav_pred, my_title):
     plt.title(my_title)
     rich_women = sum(classes[features['sex_Female'] == True] == fav_pred)
@@ -201,6 +198,22 @@ def adult_pie(features, classes, fav_pred, unfav_pred, my_title):
 
     my_labels = ["Rich women", "Rich men", "Poor women", "Poor men"]
     plt.pie(np.array([rich_women, rich_men, poor_women, poor_men]), labels=my_labels,
+            autopct=lambda p: '{:.0f}'.format(p * len(features) / 100))
+
+    plt.show()
+
+
+def bank_pie(features, classes, fav_pred, unfav_pred, my_title):
+    plt.title(my_title)
+    yes_elder = sum(classes[features['age_elder'] == True] == fav_pred)
+    no_elder = sum(classes[features['age_elder'] == True] == unfav_pred)
+    yes_adult = sum(classes[features['age_adult'] == True] == fav_pred)
+    no_adult = sum(classes[features['age_adult'] == True] == unfav_pred)
+    yes_young = sum(classes[features['age_young'] == True] == fav_pred)
+    no_young = sum(classes[features['age_young'] == True] == unfav_pred)
+
+    my_labels = ["yes_elder", "no_elder", "yes_adult", "no_adult", "yes_young", "no_young"]
+    plt.pie(np.array([yes_elder, no_elder, yes_adult, no_adult, yes_young, no_young]), labels=my_labels,
             autopct=lambda p: '{:.0f}'.format(p * len(features) / 100))
 
     plt.show()
