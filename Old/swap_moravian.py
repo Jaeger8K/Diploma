@@ -23,7 +23,7 @@ def initialize_data(d):
 
 
 # Read the data from the CSV file
-d = pd.read_csv('Datasets/HR_Moravian.csv')
+d = pd.read_csv('../Datasets/HR_Moravian.csv')
 data = initialize_data(d)
 
 

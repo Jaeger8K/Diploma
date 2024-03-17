@@ -1,5 +1,6 @@
+import inspect
+import os
 import sys
-
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
@@ -162,7 +163,7 @@ def calculate_metrics(y_test, y_pred, x_test, priv, fav_out):
     b = ((y_pred == fav_out) & (x_test[priv] == True)).sum()
     disparate_impact = a / b
     print(f"{colors.HEADER}Disparate Impact Ratio: {disparate_impact}{colors.ENDC}")
-    print(a, b)
+    # print(a, b)
 
     return accuracy, disparate_impact
 
@@ -190,8 +191,7 @@ def adult_pie(features, classes, fav_pred, unfav_pred, my_title):
     poor_men = sum(classes[features['sex_Female'] == False] == unfav_pred)
 
     my_labels = ["Rich women", "Rich men", "Poor women", "Poor men"]
-    plt.pie(np.array([rich_women, rich_men, poor_women, poor_men]), labels=my_labels,
-            autopct=lambda p: '{:.0f}'.format(p * len(features) / 100))
+    plt.pie(np.array([rich_women, rich_men, poor_women, poor_men]), labels=my_labels, autopct=lambda p: '{:.0f}'.format(p * len(features) / 100))
 
     plt.show()
 
@@ -214,14 +214,15 @@ def bank_pie(features, classes, fav_pred, unfav_pred, my_title):
 
 def crime_pie(features, classes, fav_pred, unfav_pred, my_title):
     plt.title(my_title)
-    rich_women = sum(classes[features['racepctblack_unprivileged'] == True] == fav_pred)
-    poor_women = sum(classes[features['racepctblack_unprivileged'] == True] == unfav_pred)
-    rich_men = sum(classes[features['racepctblack_unprivileged'] == False] == fav_pred)
-    poor_men = sum(classes[features['racepctblack_unprivileged'] == False] == unfav_pred)
+    a = sum(classes[features['racepctblack_unprivileged'] == True] == fav_pred)
+    b = sum(classes[features['racepctblack_unprivileged'] == True] == unfav_pred)
+    c = sum(classes[features['racepctblack_unprivileged'] == False] == fav_pred)
+    d = sum(classes[features['racepctblack_unprivileged'] == False] == unfav_pred)
 
-    my_labels = ["free blacks", "free whites", "jailed blacks", "jailed whites"]
-    plt.pie(np.array([rich_women, rich_men, poor_women, poor_men]), labels=my_labels,
-            autopct=lambda p: '{:.0f}'.format(p * len(features) / 100))
+    my_labels = ["low crime black community", "low crime white community", "high crime black community", "high crime white community"]
+    plt.pie(np.array([a, c, b, d]), labels=my_labels, autopct=lambda p: '{:.0f}'.format(p * len(features) / 100))
+
+    plt.gcf().set_size_inches(7, 4)
 
     plt.show()
 
@@ -274,14 +275,23 @@ def attribute_swap_test(x, y, classifier, unpriv, priv, unfav, fav, print_functi
 
     print("\nattribute_swap_test")
 
-    # calculate_mertics(y_test, pred2, X_test, priv, fav)
-    calculate_metrics(y, pred2, x_copy, priv, fav)
+    caller_frame = inspect.stack()[1]
+    caller_filename = caller_frame.filename
 
-    # print(f"\nDifferent predictions: {sum(pred1 != pred2)}")
+    # Extract just the name of the file
+    caller_filename = os.path.basename(caller_filename)
 
-    # adult_pie(X_test, pred2, '>50K', '<=50K', 'pred2 data')
-    if print_function:
+    if caller_filename == 'swap_adults.py':
+        # calculate_mertics(y_test, pred2, X_test, priv, fav)
+        calculate_metrics(y, pred2, x_copy, priv, fav)
+    elif caller_filename == 'swap_crime.py':
+        # calculate_mertics(y_test, pred2, X_test, priv, fav)
+        calculate_metrics(y, pred2, x_copy, unpriv, fav)
+
+    if print_function == adult_pie:
         print_function(x, pred2, fav, unfav, 'attribute_swap_test')
+    elif print_function == crime_pie:
+        print_function(x, pred2, unfav, fav, 'attribute_swap_test')
 
 
 def critical_region_test(x, y, classifier, unpriv, priv, unfav, fav, lower_bound, upper_bound, print_function):
@@ -301,8 +311,10 @@ def critical_region_test(x, y, classifier, unpriv, priv, unfav, fav, lower_bound
     print(f"\ncritical_region_test l: {upper_bound}")
     print(f"{colors.RED}Elements in critical region: {len(indexes)}{colors.ENDC}")
 
-    if print_function:
+    if print_function == adult_pie:
         print_function(x, pred4, fav, unfav, f'critical_region_test l: {upper_bound}')
+    elif print_function == crime_pie:
+        print_function(x, pred4, unfav, fav, f'critical_region_test l: {upper_bound}')
 
     a, b = calculate_metrics(y, pred4, x, priv, fav)
 
@@ -330,8 +342,10 @@ def attribute_swap_and_critical(x, y, classifier, unpriv, priv, unfav, fav, lowe
     print(f"\nattribute_swap_and_critical l: {upper_bound}")
     print(f"{colors.RED}Elements in critical region: {len(indexes)}{colors.ENDC}")
 
-    if print_function:
+    if print_function == adult_pie:
         print_function(x, pred3, fav, unfav, f'attribute_swap_and_critical l: {upper_bound}')
+    elif print_function == crime_pie:
+        print_function(x, pred3, unfav, fav, f'attribute_swap_and_critical l: {upper_bound}')
 
     a, b = calculate_metrics(y, pred3, x_copy, unpriv, fav)
 

@@ -9,7 +9,7 @@ A default entry typically occurs when a borrower fails to repay a debt as agreed
 resulting in negative consequences for their credit history.
 '''
 
-data = pd.read_csv('Datasets/credit_risk_dataset.csv')
+data = pd.read_csv('../Datasets/credit_risk_dataset.csv')
 data = data.dropna()
 
 handle_age(data, 'person_age', 25, 55)

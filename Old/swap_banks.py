@@ -66,7 +66,7 @@ def attribute_swap_and_critical(unpriv, priv, fav, lower_bound, upper_bound):
     bank_pie(X_test, pred3, 'yes', 'no', 'swapped values and critical region')
 
 
-data = pd.read_csv('Datasets/bank_dataset.csv')
+data = pd.read_csv('../Datasets/bank_dataset.csv')
 data = data.dropna()
 
 handle_age(data, 'age', 30, 60)
