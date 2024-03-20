@@ -1,7 +1,7 @@
 import sys
 from fairlearn.datasets import fetch_adult
 
-from Utilities import calculate_metrics, choose_classifier, preprocess_data, critical_region_test, attribute_swap_test, adult_pie, summary_plot, \
+from Utilities import calculate_metrics, choose_classifier, preprocess_data, critical_region_test, attribute_swap_test, adult_pie, \
     attribute_swap_and_critical, plot_calculation
 
 data = fetch_adult(as_frame=True)

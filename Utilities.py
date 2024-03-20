@@ -281,10 +281,10 @@ def attribute_swap_test(x, y, classifier, unpriv, priv, unfav, fav, print_functi
     # Extract just the name of the file
     caller_filename = os.path.basename(caller_filename)
 
-    if caller_filename == 'swap_adults.py':
+    if caller_filename == 'swap_adults.py' or caller_filename == 'cross_adults.py':
         # calculate_mertics(y_test, pred2, X_test, priv, fav)
         calculate_metrics(y, pred2, x_copy, priv, fav)
-    elif caller_filename == 'swap_crime.py':
+    elif caller_filename == 'swap_crime.py' or caller_filename == 'cross_crime.py':
         # calculate_mertics(y_test, pred2, X_test, priv, fav)
         calculate_metrics(y, pred2, x_copy, unpriv, fav)
 

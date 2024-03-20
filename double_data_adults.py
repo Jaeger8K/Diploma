@@ -1,6 +1,6 @@
 from fairlearn.datasets import fetch_adult
 
-from Utilities import double_data, choose_classifier, adult_pie, calculate_mertics, preprocess_data
+from Utilities import double_data, choose_classifier, adult_pie, calculate_metrics, preprocess_data
 
 data = fetch_adult(as_frame=True)
 
@@ -21,4 +21,4 @@ adult_pie(test_X_test, pred1, '>50K', '<=50K', 'prediction')
 print()
 print(classifier)
 
-calculate_mertics(test_y_test, pred1, test_X_test, 'sex_Female', '>50K')
+calculate_metrics(test_y_test, pred1, test_X_test, 'sex_Female', '>50K')
