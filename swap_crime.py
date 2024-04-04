@@ -1,10 +1,14 @@
 import sys
-
 import pandas as pd
 from ucimlrepo import fetch_ucirepo
-from Utilities import preprocess_data, choose_classifier, crime_pie, calculate_metrics, attribute_swap_test, plot_calculation, \
-    critical_region_test, attribute_swap_and_critical
+from Utilities import preprocess_data, choose_classifier, crime_pie, calculate_metrics, attribute_swap_test, plot_calculation
 
+"""
+:param sys.argv[1]: contains the size of the test split. values:[0.1 -0.9]
+:param sys.argv[2]: contains the choice of classifier. values:[1,2,3,4]
+:param sys.argv[3]: contains highest value of the l parameter multiplied by 100. values:[1-90]
+
+"""
 # fetch dataset
 communities_and_crime = fetch_ucirepo(id=183)
 

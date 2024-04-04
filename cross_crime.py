@@ -5,6 +5,13 @@ from ucimlrepo import fetch_ucirepo
 from Utilities import calculate_metrics, choose_classifier, attribute_swap_test, critical_region_test, \
     attribute_swap_and_critical, cross_validation_load, crime_pie
 
+"""
+:param sys.argv[1]: contains the choice of classifier. values:[1,2,3,4]
+:param sys.argv[2]: contains the l parameter of the ROC algorithm. values:[0.1-0.9]
+:param sys.argv[3]: contains the l parameter of the modified algorithm. values:[0.1-0.9]
+
+"""
+
 # fetch dataset
 communities_and_crime = fetch_ucirepo(id=183)
 
@@ -37,8 +44,10 @@ for train_indices, test_indices in k_fold.split(X):
     print()
     print(classifier)
 
+    # Calculate the metrics for the vanilla classifier.
     calculate_metrics(y_test, pred1, X_test, 'racepctblack_unprivileged', 'High_crime')
 
+    # Calculate the metrics for the modified classifier.
     attribute_swap_test(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime', crime_pie)
     critical_region_test(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime', 0, float(sys.argv[2]), crime_pie)
     attribute_swap_and_critical(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime', 0, float(sys.argv[3]), crime_pie)
