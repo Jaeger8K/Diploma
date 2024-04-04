@@ -146,10 +146,10 @@ def choose_classifier(model_selection):
         m = RandomForestClassifier(max_depth=5, random_state=0)
 
     elif model_selection == "3":  # works, needs more iterations, takes time
-        m = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1, max_iter=800)
+        m = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1, max_iter=1300)
 
     elif model_selection == "4":  # works, needs more iterations, takes time
-        m = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1, max_iter=800)
+        m = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1, max_iter=1300)
 
     # elif model_selection == "4":  # works
     #    m = DecisionTreeClassifier(min_samples_leaf=10, max_depth=4)
