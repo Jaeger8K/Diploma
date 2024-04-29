@@ -168,8 +168,8 @@ def choose_classifier(model_selection):
 
     return m
 
-def counterfactual_dataset(dataframe, test_size, class_label):
 
+def counterfactual_dataset(dataframe, test_size, class_label, prot_at_label):
     # Assuming df is your DataFrame
     numerical_columns = dataframe.select_dtypes(include=['number']).columns.tolist()
 
@@ -180,8 +180,13 @@ def counterfactual_dataset(dataframe, test_size, class_label):
     # Transform and replace the original numerical data with the normalized values
     dataframe[numerical_columns] = scaler.transform(dataframe[numerical_columns])
 
+    # Assuming df is your DataFrame and 'column_name' is the name of the column
+    unique_values = dataframe[prot_at_label].unique()
+
     # Replace values in the 'sex' column
-    dataframe['sex'] = dataframe['sex'].replace({'Male': 'Female', 'Female': 'Male'})
+    dataframe[prot_at_label] = dataframe[prot_at_label].replace(
+        {unique_values[0]: unique_values[1], unique_values[1]: unique_values[0]})
+    # dataframe[prot_at_label] = dataframe[prot_at_label].replace({'Male': 'Female', 'Female': 'Male'})
 
     X = dataframe.drop(class_label, axis=1)  # Drop the 'class' column to get features (X)
     y = dataframe[class_label]  # Extract the 'class' column as the target variable (y)
@@ -348,6 +353,38 @@ def crime_pie(features, classes, fav_pred, unfav_pred, my_title):
     plt.show()
 
 
+def pre_plot_calculation(X_test, y_test, classifier, c_classifier, priv, unpriv, fav, unfav):
+    l_values = []
+    ROC_accuracy = []
+    ROC_DIR = []
+    ROC_samples = []
+    CROC_accuracy = []
+    CROC_DIR = []
+    CROC_samples = []
+
+    for i in range(1, int(sys.argv[3])):
+        # accuracy, disparate_impact, precision, recall
+        a_1, b_1, c_1 = critical_region_test(X_test, y_test, classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
+        a_2, b_2, c_2 = critical_region_test(X_test, y_test, c_classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
+
+        ROC_accuracy.append(a_1)
+        CROC_accuracy.append(a_2)
+        ROC_DIR.append(b_1)
+        CROC_DIR.append(b_2)
+        ROC_samples.append(c_1)
+        CROC_samples.append(c_2)
+
+        l_values.append(i / 100)
+
+    summary_plot(l_values, ROC_accuracy, CROC_accuracy, 'ROC_accuracy', 'CROC_accuracy', 'l_values', 'Accuracy',
+                 'Accuracy vs probability difference')
+
+    summary_plot(l_values, ROC_DIR, CROC_DIR, 'ROC_DIR', 'CROC_DIR', 'l_values', 'DIR', 'DIR vs probability difference')
+
+    summary_plot(l_values, ROC_samples, CROC_samples, 'ROC_samples', 'CROC_samples', 'l_values', 'samples',
+                 'samples vs probability difference')
+
+
 def post_plot_calculation(X_test, y_test, classifier, priv, unpriv, fav, unfav):
     """
     A function used for calculating the Disparate Impact Ratio,accuracy,recall and precision for multiple executions
@@ -439,10 +476,10 @@ def attribute_swap_test(x, y, classifier, unpriv, priv, unfav, fav, print_functi
     # Extract just the name of the file
     caller_filename = os.path.basename(caller_filename)
 
-    if caller_filename == 'swap_adults.py' or caller_filename == 'cross_adults.py':
+    if caller_filename == 'postswap_adults.py' or caller_filename == 'postcross_adults.py':
         # calculate_mertics(y_test, pred2, X_test, priv, fav)
         calculate_metrics(y, pred2, x_copy, priv, fav)
-    elif caller_filename == 'swap_crime.py' or caller_filename == 'cross_crime.py':
+    elif caller_filename == 'postswap_crime.py' or caller_filename == 'postcross_crime.py':
         # calculate_mertics(y_test, pred2, X_test, priv, fav)
         calculate_metrics(y, pred2, x_copy, unpriv, fav)
 

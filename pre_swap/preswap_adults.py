@@ -1,8 +1,7 @@
 import sys
 from fairlearn.datasets import fetch_adult
 
-from Utilities import counterfactual_dataset, preprocess_data, choose_classifier, calculate_metrics, adult_pie, \
-    post_plot_calculation
+from Utilities import counterfactual_dataset, preprocess_data, choose_classifier, calculate_metrics, adult_pie,pre_plot_calculation
 
 """
 :param sys.argv[1]: contains the size of the test split. values:[0.1 -0.9]
@@ -15,7 +14,7 @@ data = fetch_adult(as_frame=True)
 
 dataframe = data.frame
 X_train, X_test, y_train, y_test = preprocess_data(dataframe, float(sys.argv[1]), 'class')
-c_X_train, c_X_test, c_y_train, c_y_test = counterfactual_dataset(dataframe, float(sys.argv[1]), 'class')
+c_X_train, c_X_test, c_y_train, c_y_test = counterfactual_dataset(dataframe, float(sys.argv[1]), 'class', 'sex')
 
 classifier = choose_classifier(sys.argv[2])
 
@@ -30,7 +29,7 @@ c_pred1 = c_classifier.predict(X_test)
 
 adult_pie(X_test, y_test, '>50K', '<=50K', 'test data')
 adult_pie(X_test, pred1, '>50K', '<=50K', 'classifier predictions')
-adult_pie(X_test, c_pred1, '>50K', '<=50K', 'classifier predictions')
+adult_pie(X_test, c_pred1, '>50K', '<=50K', 'counter classifier predictions')
 
 print()
 print(classifier)
@@ -39,4 +38,4 @@ calculate_metrics(y_test, pred1, X_test, 'sex_Male', '>50K')
 print()
 calculate_metrics(y_test, c_pred1, X_test, 'sex_Male', '>50K')
 
-post_plot_calculation(X_test, y_test, classifier, 'sex_Male', 'sex_Female', '>50K', '<=50K')
+pre_plot_calculation(X_test, y_test, classifier, c_classifier, 'sex_Male', 'sex_Female', '>50K', '<=50K')
