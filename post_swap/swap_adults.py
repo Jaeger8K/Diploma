@@ -1,7 +1,7 @@
 import sys
 from fairlearn.datasets import fetch_adult
 
-from Utilities import calculate_metrics, choose_classifier, preprocess_data, attribute_swap_test, adult_pie, plot_calculation
+from Utilities import calculate_metrics, choose_classifier, preprocess_data, attribute_swap_test, adult_pie, post_plot_calculation
 
 """
 :param sys.argv[1]: contains the size of the test split. values:[0.1 -0.9]
@@ -40,4 +40,4 @@ attribute_swap_test(X_test, y_test, classifier, 'sex_Male', 'sex_Female', '<=50K
 # show_metrics_adults(classifier)
 # Print the name of the script being executed
 
-plot_calculation(X_test, y_test, classifier, 'sex_Male', 'sex_Female', '>50K', '<=50K')
+post_plot_calculation(X_test, y_test, classifier, 'sex_Male', 'sex_Female', '>50K', '<=50K')

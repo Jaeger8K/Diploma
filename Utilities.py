@@ -168,6 +168,28 @@ def choose_classifier(model_selection):
 
     return m
 
+def counterfactual_dataset(dataframe, test_size, class_label):
+
+    # Assuming df is your DataFrame
+    numerical_columns = dataframe.select_dtypes(include=['number']).columns.tolist()
+
+    scaler = MinMaxScaler()
+
+    scaler.fit(dataframe[numerical_columns])
+
+    # Transform and replace the original numerical data with the normalized values
+    dataframe[numerical_columns] = scaler.transform(dataframe[numerical_columns])
+
+    # Replace values in the 'sex' column
+    dataframe['sex'] = dataframe['sex'].replace({'Male': 'Female', 'Female': 'Male'})
+
+    X = dataframe.drop(class_label, axis=1)  # Drop the 'class' column to get features (X)
+    y = dataframe[class_label]  # Extract the 'class' column as the target variable (y)
+
+    x_dummies = pd.get_dummies(X)
+
+    return train_test_split(x_dummies, y, test_size=test_size, random_state=1)
+
 
 def double_data(dataframe, test_size, protected_attributes, class_label):
     """
@@ -270,7 +292,8 @@ def adult_pie(features, classes, fav_pred, unfav_pred, my_title):
     poor_men = sum(classes[features['sex_Female'] == False] == unfav_pred)
 
     my_labels = ["Rich women", "Rich men", "Poor women", "Poor men"]
-    plt.pie(np.array([rich_women, rich_men, poor_women, poor_men]), labels=my_labels, autopct=lambda p: '{:.0f}'.format(p * len(features) / 100))
+    plt.pie(np.array([rich_women, rich_men, poor_women, poor_men]), labels=my_labels,
+            autopct=lambda p: '{:.0f}'.format(p * len(features) / 100))
 
     plt.show()
 
@@ -316,7 +339,8 @@ def crime_pie(features, classes, fav_pred, unfav_pred, my_title):
     c = sum(classes[features['racepctblack_unprivileged'] == False] == fav_pred)
     d = sum(classes[features['racepctblack_unprivileged'] == False] == unfav_pred)
 
-    my_labels = ["low crime black community", "low crime white community", "high crime black community", "high crime white community"]
+    my_labels = ["low crime black community", "low crime white community", "high crime black community",
+                 "high crime white community"]
     plt.pie(np.array([a, c, b, d]), labels=my_labels, autopct=lambda p: '{:.0f}'.format(p * len(features) / 100))
 
     plt.gcf().set_size_inches(7, 4)
@@ -324,7 +348,7 @@ def crime_pie(features, classes, fav_pred, unfav_pred, my_title):
     plt.show()
 
 
-def plot_calculation(X_test, y_test, classifier, priv, unpriv, fav, unfav):
+def post_plot_calculation(X_test, y_test, classifier, priv, unpriv, fav, unfav):
     """
     A function used for calculating the Disparate Impact Ratio,accuracy,recall and precision for multiple executions
     of ROC and the attribute_swap + ROC algorithm. Each time a different value of l is used.
@@ -348,7 +372,8 @@ def plot_calculation(X_test, y_test, classifier, priv, unpriv, fav, unfav):
     for i in range(1, int(sys.argv[3])):
         # accuracy, disparate_impact, precision, recall
         a_1, b_1, c_1 = critical_region_test(X_test, y_test, classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
-        a_2, b_2, c_2 = attribute_swap_and_critical(X_test, y_test, classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
+        a_2, b_2, c_2 = attribute_swap_and_critical(X_test, y_test, classifier, unpriv, priv, unfav, fav, 0, i / 100,
+                                                    None)
 
         ROC_accuracy.append(a_1)
         SROC_accuracy.append(a_2)
@@ -364,7 +389,8 @@ def plot_calculation(X_test, y_test, classifier, priv, unpriv, fav, unfav):
 
     summary_plot(l_values, ROC_DIR, SROC_DIR, 'ROC_DIR', 'SROC_DIR', 'l_values', 'DIR', 'DIR vs probability difference')
 
-    summary_plot(l_values, ROC_samples, SROC_samples, 'ROC_samples', 'SROC_samples', 'l_values', 'samples', 'samples vs probability difference')
+    summary_plot(l_values, ROC_samples, SROC_samples, 'ROC_samples', 'SROC_samples', 'l_values', 'samples',
+                 'samples vs probability difference')
 
 
 def partitioning(lower_bound, upper_bound, classifier_prob):

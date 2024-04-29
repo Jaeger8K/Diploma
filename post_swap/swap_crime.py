@@ -1,7 +1,7 @@
 import sys
 import pandas as pd
 from ucimlrepo import fetch_ucirepo
-from Utilities import preprocess_data, choose_classifier, crime_pie, calculate_metrics, attribute_swap_test, plot_calculation
+from Utilities import preprocess_data, choose_classifier, crime_pie, calculate_metrics, attribute_swap_test, post_plot_calculation
 
 """
 :param sys.argv[1]: contains the size of the test split. values:[0.1 -0.9]
@@ -41,4 +41,4 @@ attribute_swap_test(X_test, y_test, classifier, 'racepctblack_privileged', 'race
 # critical_region_test(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime', 0, 0.15, crime_pie)
 # attribute_swap_and_critical(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime', 0, 0.15, crime_pie)
 
-plot_calculation(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime')
+post_plot_calculation(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime')
