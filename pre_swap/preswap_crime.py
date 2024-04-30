@@ -47,4 +47,5 @@ calculate_metrics(y_test, pred1, X_test, 'racepctblack_unprivileged', 'High_crim
 print()
 calculate_metrics(y_test, c_pred1, X_test, 'racepctblack_unprivileged', 'High_crime')
 
-pre_plot_calculation(X_test, y_test, classifier,c_classifier , 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime')
+pre_plot_calculation(X_test, y_test, classifier,c_classifier , 'racepctblack_privileged'
+                     , 'racepctblack_unprivileged', 'Low_crime', 'High_crime')

@@ -1,7 +1,8 @@
 import sys
 from fairlearn.datasets import fetch_adult
 
-from Utilities import calculate_metrics, choose_classifier, preprocess_data, attribute_swap_test, adult_pie, post_plot_calculation
+from Utilities import calculate_metrics, choose_classifier, preprocess_data, attribute_swap_test, adult_pie, \
+    post_plot_calculation, pie_plot
 
 """
 :param sys.argv[1]: contains the size of the test split. values:[0.1 -0.9]
@@ -21,23 +22,15 @@ classifier = choose_classifier(sys.argv[2])
 classifier.fit(X_train, y_train)
 pred1 = classifier.predict(X_test)
 
-adult_pie(X_test, y_test, '>50K', '<=50K', 'test data')
-adult_pie(X_test, pred1, '>50K', '<=50K', 'classifier predictions')
+pie_labels = ["Rich women", "Rich men", "Poor women", "Poor men"]
+pie_plot(X_test, y_test, '>50K', '<=50K', 'sex_Female', pie_labels, 'test data')
+pie_plot(X_test, pred1, '>50K', '<=50K', 'sex_Female', pie_labels, 'classifier predictions')
 
 print()
 print(classifier)
 
 calculate_metrics(y_test, pred1, X_test, 'sex_Male', '>50K')
 
-# attribute_swap_test(X_test, y_test, classifier, 'sex_Male', 'sex_Female', '<=50K', '>50K', None)
-# critical_region_test(X_test, y_test, classifier, 'sex_Female', 'sex_Male', '<=50K', '>50K', 0, sys.argv[3], None)
-# attribute_swap_and_critical(X_test, y_test, classifier, 'sex_Female', 'sex_Male', '<=50K', '>50K', 0, sys.argv[3], None)
-
 attribute_swap_test(X_test, y_test, classifier, 'sex_Male', 'sex_Female', '<=50K', '>50K', adult_pie)
-# critical_region_test(X_test, y_test, classifier, 'sex_Female', 'sex_Male', '<=50K', '>50K', 0, 0.1, adult_pie)
-# attribute_swap_and_critical(X_test, y_test, classifier, 'sex_Female', 'sex_Male', '<=50K', '>50K', 0, 0.1, adult_pie)
-
-# show_metrics_adults(classifier)
-# Print the name of the script being executed
 
 post_plot_calculation(X_test, y_test, classifier, 'sex_Male', 'sex_Female', '>50K', '<=50K')

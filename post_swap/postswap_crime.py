@@ -1,7 +1,8 @@
 import sys
 import pandas as pd
 from ucimlrepo import fetch_ucirepo
-from Utilities import preprocess_data, choose_classifier, crime_pie, calculate_metrics, attribute_swap_test, post_plot_calculation
+from Utilities import (preprocess_data, choose_classifier, crime_pie, calculate_metrics, attribute_swap_test,
+                       post_plot_calculation, pie_plot)
 
 """
 :param sys.argv[1]: contains the size of the test split. values:[0.1 -0.9]
@@ -29,16 +30,22 @@ classifier = choose_classifier(sys.argv[2])
 classifier.fit(X_train, y_train)
 pred1 = classifier.predict(X_test)
 
-crime_pie(X_test, y_test, 'Low_crime', 'High_crime', 'test data')
-crime_pie(X_test, pred1, 'Low_crime', 'High_crime', 'classifier predictions')
+pie_labels = ["low crime black community", "low crime white community", "high crime black community",
+             "high crime white community"]
+
+pie_plot(X_test, y_test, 'Low_crime', 'High_crime', 'racepctblack_unprivileged', pie_labels
+         , 'test data')
+
+pie_plot(X_test, pred1, 'Low_crime', 'High_crime', 'racepctblack_unprivileged', pie_labels
+         , 'classifier predictions')
 
 print()
 print(classifier)
 
 calculate_metrics(y_test, pred1, X_test, 'racepctblack_unprivileged', 'High_crime')
 
-attribute_swap_test(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime', crime_pie)
-# critical_region_test(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime', 0, 0.15, crime_pie)
-# attribute_swap_and_critical(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime', 0, 0.15, crime_pie)
+attribute_swap_test(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged',
+                    'Low_crime', 'High_crime', crime_pie)
 
-post_plot_calculation(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime')
+post_plot_calculation(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged',
+                      'Low_crime', 'High_crime')

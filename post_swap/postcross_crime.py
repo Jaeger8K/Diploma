@@ -48,6 +48,12 @@ for train_indices, test_indices in k_fold.split(X):
     calculate_metrics(y_test, pred1, X_test, 'racepctblack_unprivileged', 'High_crime')
 
     # Calculate the metrics for the modified classifier.
-    attribute_swap_test(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime', crime_pie)
-    critical_region_test(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime', 0, float(sys.argv[2]), crime_pie)
-    attribute_swap_and_critical(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime', 0, float(sys.argv[3]), crime_pie)
+    attribute_swap_test(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged'
+                        , 'Low_crime', 'High_crime', crime_pie)
+
+    critical_region_test(X_test, y_test, classifier, 'racepctblack_privileged', 'racepctblack_unprivileged'
+                         , 'Low_crime', 'High_crime', 0, float(sys.argv[2]), crime_pie)
+
+    attribute_swap_and_critical(X_test, y_test, classifier, 'racepctblack_privileged'
+                                , 'racepctblack_unprivileged', 'Low_crime', 'High_crime', 0
+                                , float(sys.argv[3]), crime_pie)
