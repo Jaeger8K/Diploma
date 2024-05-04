@@ -60,3 +60,23 @@ def double_data(dataframe, test_size, protected_attributes, class_label):
     x_dummies = pd.get_dummies(X)
 
     return train_test_split(x_dummies, y, test_size=test_size, random_state=1)
+
+def handle_age(data, label, low, high):
+    """
+    A simple function used for assigning values to the person_age label of the bank_dataset
+    :param data: the dataframe containing the attributes of each instance
+    :param label: the label which corresponds to the person_age column
+    :param low: the lower bound that separates the 3 age groups
+    :param low: the highest bound that separates the 3 age groups
+
+    """
+    # Define conditions and corresponding values
+    conditions = [
+        data[label] <= low,
+        (data[label] > low) & (data[label] <= high),
+        data[label] > high
+    ]
+    values = ['young', 'adult', 'elder']
+
+    # Update the 'person_age' column based on conditions
+    data[label] = np.select(conditions, values, default=data[label])

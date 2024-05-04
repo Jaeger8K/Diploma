@@ -26,27 +26,6 @@ class COLORS:
     ENDC = '\033[0m'
 
 
-def handle_age(data, label, low, high):
-    """
-    A simple function used for assigning values to the person_age label of the bank_dataset
-    :param data: the dataframe containing the attributes of each instance
-    :param label: the label which corresponds to the person_age column
-    :param low: the lower bound that separates the 3 age groups
-    :param low: the highest bound that separates the 3 age groups
-
-    """
-    # Define conditions and corresponding values
-    conditions = [
-        data[label] <= low,
-        (data[label] > low) & (data[label] <= high),
-        data[label] > high
-    ]
-    values = ['young', 'adult', 'elder']
-
-    # Update the 'person_age' column based on conditions
-    data[label] = np.select(conditions, values, default=data[label])
-
-
 def print_df_columns(columns):
     """
     A simple function used for printing the columns of a dataframe
@@ -235,12 +214,12 @@ def summary_plot(a, b, c, d, e, f, g, h):
 
     """
     # Plotting
-    plt.plot(a, b, label=d)
-    plt.plot(a, c, label=e)
+    plt.plot(a[:len(b)], b, label=d)
+    plt.plot(a[:len(c)], c, label=e)
 
     # Adding labels and title
-    plt.xlabel(f)
-    plt.ylabel(g)
+    plt.xlabel(f, fontsize=14)
+    plt.ylabel(g, fontsize=14)
     plt.title(h)
     plt.legend()
 
@@ -321,27 +300,43 @@ def pre_plot_calculation(X_test, y_test, classifier, c_classifier, priv, unpriv,
     CROC_DIR = []
     CROC_samples = []
 
+    done_1 = 0
+    done_2 = 0
+
     for i in range(1, int(sys.argv[3])):
         # accuracy, disparate_impact, precision, recall
-        a_1, b_1, c_1 = critical_region_test(X_test, y_test, classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
-        a_2, b_2, c_2 = critical_region_test(X_test, y_test, c_classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
+        if done_1 == 0:
 
-        ROC_accuracy.append(a_1)
-        CROC_accuracy.append(a_2)
-        ROC_DIR.append(b_1)
-        CROC_DIR.append(b_2)
-        ROC_samples.append(c_1)
-        CROC_samples.append(c_2)
+            a_1, b_1, c_1 = critical_region_test(X_test, y_test, classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
+            ROC_accuracy.append(a_1)
+            ROC_DIR.append(b_1)
+            ROC_samples.append(c_1)
+
+            if b_1 > 1.0:
+                done_1 = 1
+
+        if done_2 == 0:
+            a_2, b_2, c_2 = critical_region_test(X_test, y_test, c_classifier, unpriv, priv, unfav, fav, 0, i / 100,
+                                                 None)
+            CROC_accuracy.append(a_2)
+            CROC_DIR.append(b_2)
+            CROC_samples.append(c_2)
+
+            if b_2 > 1.0:
+                done_2 = 1
 
         l_values.append(i / 100)
 
-    summary_plot(l_values, ROC_accuracy, CROC_accuracy, 'ROC_accuracy', 'CROC_accuracy', 'l_values', 'Accuracy',
-                 'Accuracy vs probability difference')
+        if done_1 == 1 and done_2 == 1:
+            break
 
-    summary_plot(l_values, ROC_DIR, CROC_DIR, 'ROC_DIR', 'CROC_DIR', 'l_values', 'DIR', 'DIR vs probability difference')
+    summary_plot(l_values, ROC_accuracy, CROC_accuracy, 'ROC', 'ROC+MOD', 'critical region', 'Accuracy',
+                 'accuracy vs critical region')
 
-    summary_plot(l_values, ROC_samples, CROC_samples, 'ROC_samples', 'CROC_samples', 'l_values', 'samples',
-                 'samples vs probability difference')
+    summary_plot(l_values, ROC_DIR, CROC_DIR, 'ROC', 'ROC+MOD', 'critical region', 'DIR', 'DIR vs critical region')
+
+    summary_plot(l_values, ROC_samples, CROC_samples, 'ROC', 'ROC+MOD', 'critical region', 'samples',
+                 'samples vs critical region')
 
 
 def post_plot_calculation(X_test, y_test, classifier, priv, unpriv, fav, unfav):
@@ -365,28 +360,44 @@ def post_plot_calculation(X_test, y_test, classifier, priv, unpriv, fav, unfav):
     SROC_DIR = []
     SROC_samples = []
 
+    done_1 = 0
+    done_2 = 0
+
     for i in range(1, int(sys.argv[3])):
         # accuracy, disparate_impact, precision, recall
-        a_1, b_1, c_1 = critical_region_test(X_test, y_test, classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
-        a_2, b_2, c_2 = attribute_swap_and_critical(X_test, y_test, classifier, unpriv, priv, unfav, fav, 0, i / 100,
-                                                    None)
+        if done_1 == 0:
+            a_1, b_1, c_1 = critical_region_test(X_test, y_test, classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
 
-        ROC_accuracy.append(a_1)
-        SROC_accuracy.append(a_2)
-        ROC_DIR.append(b_1)
-        SROC_DIR.append(b_2)
-        ROC_samples.append(c_1)
-        SROC_samples.append(c_2)
+            ROC_accuracy.append(a_1)
+            ROC_DIR.append(b_1)
+            ROC_samples.append(c_1)
+
+            if b_1 > 1.0:
+                done_1 = 1
+
+        if done_2 == 0:
+            a_2, b_2, c_2 = attribute_swap_and_critical(X_test, y_test, classifier, unpriv, priv, unfav, fav, 0,
+                                                        i / 100, None)
+
+            SROC_accuracy.append(a_2)
+            SROC_DIR.append(b_2)
+            SROC_samples.append(c_2)
+
+            if b_2 > 1.0:
+                done_2 = 1
 
         l_values.append(i / 100)
 
-    summary_plot(l_values, ROC_accuracy, SROC_accuracy, 'ROC_accuracy', 'SROC_accuracy', 'l_values', 'Accuracy',
-                 'Accuracy vs probability difference')
+        if done_1 == 1 and done_2 == 1:
+            break
 
-    summary_plot(l_values, ROC_DIR, SROC_DIR, 'ROC_DIR', 'SROC_DIR', 'l_values', 'DIR', 'DIR vs probability difference')
+    summary_plot(l_values, ROC_accuracy, SROC_accuracy, 'ROC', 'ROC+MOD', 'critical region', 'Accuracy',
+                 'accuracy vs critical region')
 
-    summary_plot(l_values, ROC_samples, SROC_samples, 'ROC_samples', 'SROC_samples', 'l_values', 'samples',
-                 'samples vs probability difference')
+    summary_plot(l_values, ROC_DIR, SROC_DIR, 'ROC', 'ROC+MOD', 'critical region', 'DIR', 'DIR vs critical region')
+
+    summary_plot(l_values, ROC_samples, SROC_samples, 'ROC', 'ROC+MOD', 'critical region', 'samples',
+                 'samples vs critical region')
 
 
 def partitioning(lower_bound, upper_bound, classifier_prob):
