@@ -199,8 +199,10 @@ def calculate_metrics(y_test, y_pred, x_test, priv, fav_out):
     recall = recall_score(y_test, y_pred, pos_label=fav_out)
     print(f"{COLORS.YELLOW}Recall of the classifier: {recall}{COLORS.ENDC}")
 
-    a = ((y_pred == fav_out) & (x_test[priv] == False)).sum()
-    b = ((y_pred == fav_out) & (x_test[priv] == True)).sum()
+    # a = ((y_pred == fav_out) & (x_test[priv] == False)).sum()
+    # b = ((y_pred == fav_out) & (x_test[priv] == True)).sum()
+    a = ((y_pred == fav_out) & (x_test[priv] == False)).sum() / (x_test[priv] == False).sum()
+    b = ((y_pred == fav_out) & (x_test[priv] == True)).sum() / (x_test[priv] == True).sum()
     disparate_impact = a / b
     print(f"{COLORS.HEADER}Disparate Impact Ratio: {disparate_impact}{COLORS.ENDC}")
     # print(a, b)
