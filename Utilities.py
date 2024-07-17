@@ -82,6 +82,16 @@ def preprocess_data(dataframe, test_size, class_label):
 
 
 def counterfactual_dataset(dataframe, test_size, class_label, prot_at_label):
+    """
+    A function used for preprocessing each dataset. This includes normalizing numerical labels
+    and performing one-hot encoding on categorical variables. In addition the values of the protected
+    attribute are swapped so as to create a counterfactual dataset. A train test split is returned.
+    :param dataframe: the dataframe that holds the dataset information
+    :param test_size: a value specifying the size of the test split
+    :param class_label: the column that specifies the class of each sample
+    :return: a train/test split of the normalized dataset is returned
+
+    """
     # Assuming df is your DataFrame
     numerical_columns = dataframe.select_dtypes(include=['number']).columns.tolist()
 
@@ -110,7 +120,7 @@ def counterfactual_dataset(dataframe, test_size, class_label, prot_at_label):
 
 def cross_validation_load(dataframe, class_label):
     """
-    A function used for preprocessing each dataset in order to perform 10 fold croos validation.
+    A function used for preprocessing each dataset in order to perform 10 fold cross validation.
     :param dataframe: the dataframe that holds the dataset information
     :param class_label: the column that specifies the class of each sample
     :return: the function returns the modified attributes and class labels of the original dataset
