@@ -11,8 +11,8 @@ from Utilities import calculate_metrics, choose_classifier, preprocess_data, att
 
 """
 
+# fetch dataset
 data = fetch_adult(as_frame=True)
-
 dataframe = data.frame
 
 X_train, X_test, y_train, y_test = preprocess_data(dataframe, float(sys.argv[1]), 'class')

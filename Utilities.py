@@ -53,16 +53,13 @@ def print_nan(data):
     print(rows_with_nan)
 
 
-def preprocess_data(dataframe, test_size, class_label):
+def normalization(dataframe):
     """
-    A function used for preprocessing each dataset. This includes normalizing numerical labels
-    and performing one-hot encoding on categorical variables. A train test split is returned.
+    A function used for normalizing numerical labels.
     :param dataframe: the dataframe that holds the dataset information
-    :param test_size: a value specifying the size of the test split
-    :param class_label: the column that specifies the class of each sample
-    :return: a train/test split of the normalized dataset is returned
 
     """
+
     # Assuming df is your DataFrame
     numerical_columns = dataframe.select_dtypes(include=['number']).columns.tolist()
 
@@ -73,11 +70,38 @@ def preprocess_data(dataframe, test_size, class_label):
     # Transform and replace the original numerical data with the normalized values
     dataframe[numerical_columns] = scaler.transform(dataframe[numerical_columns])
 
+    return dataframe
+
+
+def one_hot_encoding(dataframe, class_label):
+    """
+    A function used for performing one-hot encoding.
+    :param dataframe: the dataframe that holds the dataset information
+    :param class_label: the column that specifies the class of each sample
+
+    """
     X = dataframe.drop(class_label, axis=1)  # Drop the 'class' column to get features (X)
     y = dataframe[class_label]  # Extract the 'class' column as the target variable (y)
 
     x_dummies = pd.get_dummies(X)
-    # random_state = np.random.randint(1000)  # Generate a random integer
+
+    return x_dummies, y
+
+
+def preprocess_data(dataframe, test_size, class_label):
+    """
+    A function used for preprocessing each dataset. This includes normalizing numerical labels
+    and performing one-hot encoding . A train test split is returned.
+    :param dataframe: the dataframe that holds the dataset information
+    :param test_size: a value specifying the size of the test split
+    :param class_label: the column that specifies the class of each sample
+    :return: a train/test split of the normalized dataset is returned
+
+    """
+    dataframe = normalization(dataframe)
+
+    x_dummies, y = one_hot_encoding(dataframe, class_label)
+
     return train_test_split(x_dummies, y, test_size=test_size, random_state=1)
 
 
@@ -92,15 +116,7 @@ def counterfactual_dataset(dataframe, test_size, class_label, prot_at_label):
     :return: a train/test split of the normalized dataset is returned
 
     """
-    # Assuming df is your DataFrame
-    numerical_columns = dataframe.select_dtypes(include=['number']).columns.tolist()
-
-    scaler = MinMaxScaler()
-
-    scaler.fit(dataframe[numerical_columns])
-
-    # Transform and replace the original numerical data with the normalized values
-    dataframe[numerical_columns] = scaler.transform(dataframe[numerical_columns])
+    dataframe = normalization(dataframe)
 
     # Assuming df is your DataFrame and 'column_name' is the name of the column
     unique_values = dataframe[prot_at_label].unique()
@@ -108,12 +124,8 @@ def counterfactual_dataset(dataframe, test_size, class_label, prot_at_label):
     # Replace values in the 'sex' column
     dataframe[prot_at_label] = dataframe[prot_at_label].replace(
         {unique_values[0]: unique_values[1], unique_values[1]: unique_values[0]})
-    # dataframe[prot_at_label] = dataframe[prot_at_label].replace({'Male': 'Female', 'Female': 'Male'})
 
-    X = dataframe.drop(class_label, axis=1)  # Drop the 'class' column to get features (X)
-    y = dataframe[class_label]  # Extract the 'class' column as the target variable (y)
-
-    x_dummies = pd.get_dummies(X)
+    x_dummies, y = one_hot_encoding(dataframe, class_label)
 
     return train_test_split(x_dummies, y, test_size=test_size, random_state=1)
 
@@ -127,21 +139,9 @@ def cross_validation_load(dataframe, class_label):
     in separate data structures
 
     """
+    dataframe = normalization(dataframe)
 
-    # Assuming df is your DataFrame
-    numerical_columns = dataframe.select_dtypes(include=['number']).columns.tolist()
-
-    scaler = MinMaxScaler()
-
-    scaler.fit(dataframe[numerical_columns])
-
-    # Transform and replace the original numerical data with the normalized values
-    dataframe[numerical_columns] = scaler.transform(dataframe[numerical_columns])
-
-    X = dataframe.drop(class_label, axis=1)  # Drop the 'class' column to get features (X)
-    y = dataframe[class_label]  # Extract the 'class' column as the target variable (y)
-
-    x_dummies = pd.get_dummies(X)
+    x_dummies, y = one_hot_encoding(dataframe, class_label)
 
     return x_dummies, y
 
@@ -304,6 +304,20 @@ def pie_plot(features, classes, fav_pred, unfav_pred, unpriv, labels, my_title):
 
 
 def pre_plot_calculation(X_test, y_test, classifier, c_classifier, priv, unpriv, fav, unfav):
+    """
+    A function used for calculating the Disparate Impact Ratio,accuracy,recall and precision for multiple executions
+    of ROC on 2 different versions of the same type of classifier, 1 is the counterfactually trained.
+    Each time a different value of l is used.
+    :param X_test: the dataframe holding the attributes of the test split
+    :param y_test: the dataframe holding the classes of the test split
+    :param classifier: a variable holding a classifier instance
+    :param c_classifier: a variable holding a counterfactual instance of classifier
+    :param priv: the privileged group
+    :param unpriv: the unprivileged group
+    :param fav: the favourable outcome
+    :param unfav: the unfavourable outcome
+
+    """
     l_values = []
     ROC_accuracy = []
     ROC_DIR = []
@@ -354,7 +368,7 @@ def pre_plot_calculation(X_test, y_test, classifier, c_classifier, priv, unpriv,
 def post_plot_calculation(X_test, y_test, classifier, priv, unpriv, fav, unfav):
     """
     A function used for calculating the Disparate Impact Ratio,accuracy,recall and precision for multiple executions
-    of ROC and the attribute_swap + ROC algorithm. Each time a different value of l is used.
+    of ROC and the attribute_swap + ROC algorithm on the same classifier. Each time a different value of l is used.
     :param X_test: the dataframe holding the attributes of the test split
     :param y_test: the dataframe holding the classes of the test split
     :param classifier: a variable holding a classifier instance
