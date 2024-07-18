@@ -1,13 +1,11 @@
-import inspect
-import os
 import sys
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, precision_score, recall_score
-from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
+from sklearn.model_selection import KFold
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import MinMaxScaler
 
@@ -15,15 +13,60 @@ from sklearn.preprocessing import MinMaxScaler
 # ANSI escape codes for colors
 class COLORS:
     """
-    A simple class containing the code of certain colors in order to make console output
-    more easily interpretable
+    A class containing ANSI escape codes for various colors and text styles
+    to make console output more easily interpretable and visually appealing.
     """
-    HEADER = '\033[95m'
-    BLUE = '\033[94m'
-    GREEN = '\033[92m'
-    YELLOW = '\033[93m'
-    RED = '\033[91m'
-    ENDC = '\033[0m'
+    # Text colors
+    BLACK = '\033[30m'
+    RED = '\033[31m'
+    GREEN = '\033[32m'
+    YELLOW = '\033[33m'
+    BLUE = '\033[34m'
+    MAGENTA = '\033[35m'
+    CYAN = '\033[36m'
+    WHITE = '\033[37m'
+
+    # Bright text colors
+    BRIGHT_BLACK = '\033[90m'
+    BRIGHT_RED = '\033[91m'
+    BRIGHT_GREEN = '\033[92m'
+    BRIGHT_YELLOW = '\033[93m'
+    BRIGHT_BLUE = '\033[94m'
+    BRIGHT_MAGENTA = '\033[95m'
+    BRIGHT_CYAN = '\033[96m'
+    BRIGHT_WHITE = '\033[97m'
+
+    # Background colors
+    BG_BLACK = '\033[40m'
+    BG_RED = '\033[41m'
+    BG_GREEN = '\033[42m'
+    BG_YELLOW = '\033[43m'
+    BG_BLUE = '\033[44m'
+    BG_MAGENTA = '\033[45m'
+    BG_CYAN = '\033[46m'
+    BG_WHITE = '\033[47m'
+
+    # Bright background colors
+    BG_BRIGHT_BLACK = '\033[100m'
+    BG_BRIGHT_RED = '\033[101m'
+    BG_BRIGHT_GREEN = '\033[102m'
+    BG_BRIGHT_YELLOW = '\033[103m'
+    BG_BRIGHT_BLUE = '\033[104m'
+    BG_BRIGHT_MAGENTA = '\033[105m'
+    BG_BRIGHT_CYAN = '\033[106m'
+    BG_BRIGHT_WHITE = '\033[107m'
+
+    # Text styles
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+    ITALIC = '\033[3m'
+
+    # Reset
+    RESET = '\033[0m'
+
+    # Aliases for backwards compatibility
+    HEADER = BRIGHT_MAGENTA
+    ENDC = RESET
 
 
 def print_df_columns(columns):
@@ -88,32 +131,30 @@ def one_hot_encoding(dataframe, class_label):
     return x_dummies, y
 
 
-def preprocess_data(dataframe, test_size, class_label):
+def preprocess_data(dataframe, class_label):
     """
     A function used for preprocessing each dataset. This includes normalizing numerical labels
-    and performing one-hot encoding . A train test split is returned.
+    and performing one-hot encoding. The modified dataset is returned.
     :param dataframe: the dataframe that holds the dataset information
-    :param test_size: a value specifying the size of the test split
     :param class_label: the column that specifies the class of each sample
-    :return: a train/test split of the normalized dataset is returned
+    :return: the final dataset is returned
 
     """
     dataframe = normalization(dataframe)
 
     x_dummies, y = one_hot_encoding(dataframe, class_label)
 
-    return train_test_split(x_dummies, y, test_size=test_size, random_state=1)
+    return [x_dummies, y]
 
 
-def counterfactual_dataset(dataframe, test_size, class_label, prot_at_label):
+def preprocess_counterfactual_dataset(dataframe, class_label, prot_at_label):
     """
     A function used for preprocessing each dataset. This includes normalizing numerical labels
     and performing one-hot encoding on categorical variables. In addition the values of the protected
-    attribute are swapped so as to create a counterfactual dataset. A train test split is returned.
+    attribute are swapped so as to create a counterfactual dataset. The modified dataset is returned.
     :param dataframe: the dataframe that holds the dataset information
-    :param test_size: a value specifying the size of the test split
     :param class_label: the column that specifies the class of each sample
-    :return: a train/test split of the normalized dataset is returned
+    :return: the final dataset is returned
 
     """
     dataframe = normalization(dataframe)
@@ -127,23 +168,7 @@ def counterfactual_dataset(dataframe, test_size, class_label, prot_at_label):
 
     x_dummies, y = one_hot_encoding(dataframe, class_label)
 
-    return train_test_split(x_dummies, y, test_size=test_size, random_state=1)
-
-
-def cross_validation_load(dataframe, class_label):
-    """
-    A function used for preprocessing each dataset in order to perform 10 fold cross validation.
-    :param dataframe: the dataframe that holds the dataset information
-    :param class_label: the column that specifies the class of each sample
-    :return: the function returns the modified attributes and class labels of the original dataset
-    in separate data structures
-
-    """
-    dataframe = normalization(dataframe)
-
-    x_dummies, y = one_hot_encoding(dataframe, class_label)
-
-    return x_dummies, y
+    return [x_dummies, y]
 
 
 def choose_classifier(model_selection):
@@ -187,37 +212,45 @@ def choose_classifier(model_selection):
 
 def calculate_metrics(y_test, y_pred, x_test, priv, fav_out):
     """
-    A function used for calculating the accuracy, precision, recall and Disparate Impact
-    Ratio of a classifier.
+    A function used for calculating the accuracy, Disparate Impact Ratio,
+    Equal Opportunity Difference, and Statistical Parity Difference of a classifier.
+
     :param y_test: it holds the actual class labels of the test split
-    :param y_test: it holds predicted class labels of the test split
+    :param y_pred: it holds predicted class labels of the test split
     :param x_test: it holds attributes of the test split
     :param priv: it holds the label of the privileged group
     :param fav_out: it holds the label of the favourable outcome
-    :return: the function returns the values of the Disparate Impact Ratio and accuracy of the classifier
-
+    :return: the function returns the values of the Disparate Impact Ratio, accuracy,
+             Equal Opportunity Difference, and Statistical Parity Difference of the classifier
     """
+    priv_mask = x_test[priv] == True
+    unpriv_mask = x_test[priv] == False
+
     # Calculate the accuracy
     accuracy = accuracy_score(y_test, y_pred)
-    print(f"{COLORS.GREEN}Accuracy of the classifier: {accuracy}{COLORS.ENDC}")
+    print(f"{COLORS.BRIGHT_GREEN}Accuracy : {accuracy}{COLORS.ENDC}")
 
-    # Calculate precision
-    precision = precision_score(y_test, y_pred, pos_label=fav_out)
-    print(f"{COLORS.BLUE}Precision of the classifier: {precision}{COLORS.ENDC}")
-
-    # Calculate recall
-    recall = recall_score(y_test, y_pred, pos_label=fav_out)
-    print(f"{COLORS.YELLOW}Recall of the classifier: {recall}{COLORS.ENDC}")
-
-    # a = ((y_pred == fav_out) & (x_test[priv] == False)).sum()
-    # b = ((y_pred == fav_out) & (x_test[priv] == True)).sum()
-    a = ((y_pred == fav_out) & (x_test[priv] == False)).sum() / (x_test[priv] == False).sum()
-    b = ((y_pred == fav_out) & (x_test[priv] == True)).sum() / (x_test[priv] == True).sum()
+    # Calculate Disparate Impact Ratio
+    a = ((y_pred == fav_out) & (unpriv_mask)).sum() / (unpriv_mask).sum()
+    b = ((y_pred == fav_out) & (priv_mask)).sum() / (priv_mask).sum()
     disparate_impact = a / b
     print(f"{COLORS.HEADER}Disparate Impact Ratio: {disparate_impact}{COLORS.ENDC}")
-    # print(a, b)
 
-    return accuracy, disparate_impact
+    # Calculate Equal Opportunity Difference
+    cm_priv = confusion_matrix(y_test[priv_mask], y_pred[priv_mask])
+    cm_unpriv = confusion_matrix(y_test[unpriv_mask], y_pred[unpriv_mask])
+    tpr_priv = cm_priv[1, 1] / (cm_priv[1, 1] + cm_priv[1, 0])
+    tpr_unpriv = cm_unpriv[1, 1] / (cm_unpriv[1, 1] + cm_unpriv[1, 0])
+    equal_opp_diff = tpr_priv - tpr_unpriv
+    print(f"{COLORS.BRIGHT_BLUE}Equal Opportunity Difference: {equal_opp_diff}{COLORS.ENDC}")
+
+    # Calculate Statistical Parity Difference
+    prob_pos_priv = (y_pred[priv_mask] == fav_out).mean()
+    prob_pos_unpriv = (y_pred[unpriv_mask] == fav_out).mean()
+    stat_parity_diff = prob_pos_priv - prob_pos_unpriv
+    print(f"{COLORS.BRIGHT_YELLOW}Statistical Parity Difference: {stat_parity_diff}{COLORS.ENDC}")
+
+    return accuracy, disparate_impact, equal_opp_diff, stat_parity_diff
 
 
 def summary_plot(a, b, c, d, e, f, g, h):
@@ -342,8 +375,7 @@ def pre_plot_calculation(X_test, y_test, classifier, c_classifier, priv, unpriv,
                 done_1 = 1
 
         if done_2 == 0:
-            a_2, b_2, c_2 = critical_region_test(X_test, y_test, c_classifier, unpriv, priv, unfav, fav, 0, i / 100,
-                                                 None)
+            a_2, b_2, c_2 = critical_region_test(X_test, y_test, c_classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
             CROC_accuracy.append(a_2)
             CROC_DIR.append(b_2)
             CROC_samples.append(c_2)
@@ -426,6 +458,86 @@ def post_plot_calculation(X_test, y_test, classifier, priv, unpriv, fav, unfav):
                  'samples vs critical region')
 
 
+def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds):
+    x = data[0]
+    y = data[1]
+    x_c = data_c[0]
+    y_c = data_c[1]
+
+    k_fold = KFold(n_splits=folds, shuffle=True, random_state=42)
+
+    classifier = choose_classifier(model)
+
+    c_classifier = choose_classifier(model)
+
+    ROC_accuracy = np.zeros(int(sys.argv[2])).tolist()
+    ROC_DIR = np.zeros(int(sys.argv[2])).tolist()
+    ROC_samples = np.zeros(int(sys.argv[2])).tolist()
+    ROC_EQ_OP_D = np.zeros(int(sys.argv[2])).tolist()
+    ROC_ST_P = np.zeros(int(sys.argv[2])).tolist()
+
+    CROC_accuracy = np.zeros(int(sys.argv[2])).tolist()
+    CROC_DIR = np.zeros(int(sys.argv[2])).tolist()
+    CROC_samples = np.zeros(int(sys.argv[2])).tolist()
+    CROC_EQ_OP_D = np.zeros(int(sys.argv[2])).tolist()
+    CROC_ST_P = np.zeros(int(sys.argv[2])).tolist()
+
+    l_values = [i / 100 for i in range(0, int(sys.argv[2]))]
+
+    for (train_indices, test_indices), (train_indices_c, test_indices_c) in zip(k_fold.split(x), k_fold.split(x_c)):
+
+        x_train, x_test = x.iloc[train_indices], x.iloc[test_indices]
+        y_train, y_test = y.iloc[train_indices], y.iloc[test_indices]
+
+        x_train_c, x_test_c = x_c.iloc[train_indices], x_c.iloc[test_indices]
+        y_train_c, y_test_c = y_c.iloc[train_indices], y_c.iloc[test_indices]
+        # accuracy, disparate_impact, precision, recall
+
+        for i in range(0, int(sys.argv[2])):
+            classifier.fit(x_train, y_train)
+
+            acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, classifier, unpriv, priv,
+                                                           unfav, fav, 0, i / 100, None)
+
+            ROC_accuracy[i] = ROC_accuracy[i] + acc
+            ROC_DIR[i] = ROC_DIR[i] + DIR
+            ROC_samples[i] = ROC_samples[i] + samp
+            ROC_EQ_OP_D[i] = ROC_EQ_OP_D[i] + eq_op_d
+            ROC_ST_P[i] = ROC_ST_P[i] + st_p
+
+            c_classifier.fit(x_train_c, y_train_c)
+
+            acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, c_classifier, unpriv, priv, unfav,
+                                                           fav, 0, i / 100, None)
+
+            CROC_accuracy[i] = CROC_accuracy[i] + acc
+            CROC_DIR[i] = CROC_DIR[i] + DIR
+            CROC_samples[i] = CROC_samples[i] + samp
+            CROC_EQ_OP_D[i] = CROC_EQ_OP_D[i] + eq_op_d
+            CROC_ST_P[i] = CROC_ST_P[i] + st_p
+
+    ROC_accuracy = [x / folds for x in ROC_accuracy]
+    ROC_DIR = [x / folds for x in ROC_DIR]
+    ROC_samples = [x / folds for x in ROC_samples]
+    ROC_EQ_OP_D = [x / folds for x in ROC_EQ_OP_D]
+    ROC_ST_P = [x / folds for x in ROC_ST_P]
+
+    CROC_accuracy = [x / folds for x in CROC_accuracy]
+    CROC_DIR = [x / folds for x in CROC_DIR]
+    CROC_samples = [x / folds for x in CROC_samples]
+    CROC_EQ_OP_D = [x / folds for x in CROC_EQ_OP_D]
+    CROC_ST_P = [x / folds for x in CROC_ST_P]
+
+    summary_plot(l_values, ROC_accuracy, CROC_accuracy, 'ROC', 'ROC+MOD', 'critical region', 'Accuracy', 'accuracy vs critical region')
+
+    summary_plot(l_values, ROC_DIR, CROC_DIR, 'ROC', 'ROC+MOD', 'critical region', 'DIR', 'DIR vs critical region')
+
+    summary_plot(l_values, ROC_samples, CROC_samples, 'ROC', 'ROC+MOD', 'critical region', 'samples', 'samples vs critical region')
+
+    summary_plot(l_values, ROC_EQ_OP_D, CROC_EQ_OP_D, 'ROC', 'ROC+MOD', 'critical region', 'samples', 'EQ of opportunity vs critical region')
+
+    summary_plot(l_values, ROC_ST_P, CROC_ST_P, 'ROC', 'ROC+MOD', 'critical region', 'samples', 'Statistical Parity vs critical region')
+
 def partitioning(lower_bound, upper_bound, classifier_prob):
     """
     A function used for returning the indexes of the classifier decisions that have a difference lower than l
@@ -442,47 +554,6 @@ def partitioning(lower_bound, upper_bound, classifier_prob):
     # print(len(indexes))
 
     return indexes
-
-
-def attribute_swap_test(x, y, classifier, unpriv, priv, unfav, fav, print_function):
-    """
-    A function used for switching the protected attributes of the test data. Afterwards the classifier
-    is tested with the altered data and Disparate Impact Ratio, Accuracy, Precision and Recall are calculated.
-    :param x: a dataframe holding the attributes of the test dataset
-    :param y: a dataframe holding the classes of the test dataset
-    :param classifier: a instance of the chosen classifier
-    :param unpriv: the unprivileged group
-    :param priv: the privileged group
-    :param unfav: the unfavourable outcome
-    :param fav: the favourable outcome
-    :param print_function: a function used for plotting different pie plots
-
-    """
-    x_copy = x.copy()
-    x_copy[unpriv] = ~x_copy[unpriv]
-    x_copy[priv] = ~x_copy[priv]
-
-    pred2 = classifier.predict(x_copy)
-
-    print("\nattribute_swap_test")
-
-    caller_frame = inspect.stack()[1]
-    caller_filename = caller_frame.filename
-
-    # Extract just the name of the file
-    caller_filename = os.path.basename(caller_filename)
-
-    if caller_filename == 'postswap_adults.py' or caller_filename == 'postcross_adults.py':
-        # calculate_mertics(y_test, pred2, X_test, priv, fav)
-        calculate_metrics(y, pred2, x_copy, priv, fav)
-    elif caller_filename == 'postswap_crime.py' or caller_filename == 'postcross_crime.py':
-        # calculate_mertics(y_test, pred2, X_test, priv, fav)
-        calculate_metrics(y, pred2, x_copy, unpriv, fav)
-
-    if print_function == adult_pie:
-        print_function(x, pred2, fav, unfav, 'attribute_swap_test')
-    elif print_function == crime_pie:
-        print_function(x, pred2, unfav, fav, 'attribute_swap_test')
 
 
 def critical_region_test(x, y, classifier, unpriv, priv, unfav, fav, lower_bound, upper_bound, print_function):
@@ -521,9 +592,9 @@ def critical_region_test(x, y, classifier, unpriv, priv, unfav, fav, lower_bound
     elif print_function == crime_pie:
         print_function(x, pred4, unfav, fav, f'critical_region_test l: {upper_bound}')
 
-    a, b = calculate_metrics(y, pred4, x, priv, fav)
+    a, b, c, d = calculate_metrics(y, pred4, x, priv, fav)
 
-    return a, b, len(indexes)
+    return a, b, len(indexes), c, d
 
 
 def attribute_swap_and_critical(x, y, classifier, unpriv, priv, unfav, fav, lower_bound, upper_bound, print_function):

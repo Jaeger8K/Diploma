@@ -1,8 +1,7 @@
 import sys
-import pandas as pd
 from fairlearn.datasets import fetch_adult
-
-from Utilities import counterfactual_dataset, preprocess_data, choose_classifier, calculate_metrics, adult_pie,pre_plot_calculation
+from sklearn.model_selection import train_test_split
+from Utilities import preprocess_counterfactual_dataset, preprocess_data, choose_classifier, calculate_metrics, adult_pie,pre_plot_calculation
 
 """
 :param sys.argv[1]: contains the size of the test split. values:[0.1 -0.9]
@@ -14,8 +13,12 @@ from Utilities import counterfactual_dataset, preprocess_data, choose_classifier
 data = fetch_adult(as_frame=True)
 
 dataframe = data.frame
-X_train, X_test, y_train, y_test = preprocess_data(dataframe, float(sys.argv[1]), 'class')
-c_X_train, c_X_test, c_y_train, c_y_test = counterfactual_dataset(dataframe, float(sys.argv[1]), 'class', 'sex')
+
+a = preprocess_data(dataframe, 'class')
+X_train, X_test, y_train, y_test = train_test_split(a[0], a[1], test_size=float(sys.argv[1]), random_state=1)
+
+b = preprocess_counterfactual_dataset(dataframe, 'class', 'sex')
+c_X_train, c_X_test, c_y_train, c_y_test = train_test_split(b[0], b[1], test_size=float(sys.argv[1]), random_state=1)
 
 classifier = choose_classifier(sys.argv[2])
 

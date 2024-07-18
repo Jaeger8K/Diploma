@@ -1,7 +1,8 @@
 import sys
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
-from Utilities import preprocess_data, choose_classifier, crime_pie, calculate_metrics,counterfactual_dataset, pre_plot_calculation
+from Utilities import preprocess_data, choose_classifier, crime_pie, calculate_metrics,preprocess_counterfactual_dataset, pre_plot_calculation
 
 """
 :param sys.argv[1]: contains the size of the test split. values:[0.1 -0.9]
@@ -23,8 +24,11 @@ dataframe = pd.concat([X, y], axis=1)
 dataframe['ViolentCrimesPerPop'] = dataframe['ViolentCrimesPerPop'].apply(lambda x: 'Low_crime' if x < 0.3 else 'High_crime')
 dataframe['racepctblack'] = dataframe['racepctblack'].apply(lambda x: 'privileged' if x < 0.06 else 'unprivileged')
 
-X_train, X_test, y_train, y_test = preprocess_data(dataframe, float(sys.argv[1]), 'ViolentCrimesPerPop')
-c_X_train, c_X_test, c_y_train, c_y_test = counterfactual_dataset(dataframe, float(sys.argv[1]), 'ViolentCrimesPerPop', 'racepctblack')
+a = preprocess_data(dataframe, 'ViolentCrimesPerPop')
+X_train, X_test, y_train, y_test = train_test_split(a[0], a[1], test_size=float(sys.argv[1]), random_state=1)
+
+b = preprocess_counterfactual_dataset(dataframe, 'ViolentCrimesPerPop', 'racepctblack')
+c_X_train, c_X_test, c_y_train, c_y_test = train_test_split(b[0], b[1], test_size=float(sys.argv[1]), random_state=1)
 
 classifier = choose_classifier(sys.argv[2])
 

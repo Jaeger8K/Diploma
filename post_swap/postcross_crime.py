@@ -2,8 +2,8 @@ import sys
 import pandas as pd
 from sklearn.model_selection import KFold
 from ucimlrepo import fetch_ucirepo
-from Utilities import calculate_metrics, choose_classifier, attribute_swap_test, critical_region_test, \
-    attribute_swap_and_critical, cross_validation_load, crime_pie
+from Utilities import calculate_metrics, choose_classifier, critical_region_test, \
+    attribute_swap_and_critical, crime_pie, preprocess_data
 
 """
 :param sys.argv[1]: contains the choice of classifier. values:[1,2,3,4]
@@ -26,7 +26,9 @@ dataframe = pd.concat([X, y], axis=1)
 dataframe['ViolentCrimesPerPop'] = dataframe['ViolentCrimesPerPop'].apply(lambda x: 'Low_crime' if x < 0.1 else 'High_crime')
 dataframe['racepctblack'] = dataframe['racepctblack'].apply(lambda x: 'privileged' if x < 0.06 else 'unprivileged')
 
-X, y = cross_validation_load(dataframe, 'ViolentCrimesPerPop')
+a = preprocess_data(dataframe, 'ViolentCrimesPerPop')
+X = a[0]
+y = a[1]
 
 k_fold = KFold(n_splits=10, shuffle=True, random_state=42)
 

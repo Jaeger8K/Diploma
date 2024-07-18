@@ -1,7 +1,7 @@
 import sys
 from fairlearn.datasets import fetch_adult
-
-from Utilities import calculate_metrics, choose_classifier, preprocess_data, attribute_swap_test, adult_pie, \
+from sklearn.model_selection import train_test_split
+from Utilities import calculate_metrics, choose_classifier, preprocess_data, adult_pie, \
     post_plot_calculation, pie_plot
 
 """
@@ -15,7 +15,8 @@ from Utilities import calculate_metrics, choose_classifier, preprocess_data, att
 data = fetch_adult(as_frame=True)
 dataframe = data.frame
 
-X_train, X_test, y_train, y_test = preprocess_data(dataframe, float(sys.argv[1]), 'class')
+a = preprocess_data(dataframe, 'class')
+X_train, X_test, y_train, y_test = train_test_split(a[0], a[1], test_size=float(sys.argv[1]), random_state=1)
 
 classifier = choose_classifier(sys.argv[2])
 
@@ -30,7 +31,5 @@ print()
 print(classifier)
 
 calculate_metrics(y_test, pred1, X_test, 'sex_Male', '>50K')
-
-attribute_swap_test(X_test, y_test, classifier, 'sex_Male', 'sex_Female', '<=50K', '>50K', adult_pie)
 
 post_plot_calculation(X_test, y_test, classifier, 'sex_Male', 'sex_Female', '>50K', '<=50K')

@@ -1,8 +1,9 @@
 import sys
 import pandas as pd
+from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
-from Utilities import (preprocess_data, choose_classifier, crime_pie, calculate_metrics, attribute_swap_test,
-                       post_plot_calculation, pie_plot)
+from Utilities import preprocess_data, choose_classifier, crime_pie, calculate_metrics, \
+                       post_plot_calculation, pie_plot
 
 """
 :param sys.argv[1]: contains the size of the test split. values:[0.1 -0.9]
@@ -23,7 +24,8 @@ dataframe = pd.concat([X, y], axis=1)
 # Replace values in the 'ViolentCrimesPerPop' column
 dataframe['ViolentCrimesPerPop'] = dataframe['ViolentCrimesPerPop'].apply(lambda x: 'Low_crime' if x < 0.3 else 'High_crime')
 dataframe['racepctblack'] = dataframe['racepctblack'].apply(lambda x: 'privileged' if x < 0.06 else 'unprivileged')
-X_train, X_test, y_train, y_test = preprocess_data(dataframe, float(sys.argv[1]), 'ViolentCrimesPerPop')
+a = preprocess_data(dataframe, 'ViolentCrimesPerPop')
+X_train, X_test, y_train, y_test = train_test_split(a[0], a[1], test_size=float(sys.argv[1]), random_state=1)
 
 classifier = choose_classifier(sys.argv[2])
 

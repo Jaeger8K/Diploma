@@ -2,7 +2,7 @@ import sys
 from fairlearn.datasets import fetch_adult
 from sklearn.model_selection import KFold
 from Utilities import calculate_metrics, choose_classifier, attribute_swap_test, adult_pie, critical_region_test, \
-     attribute_swap_and_critical, cross_validation_load
+     attribute_swap_and_critical, preprocess_data
 
 """
 :param sys.argv[1]: contains the choice of classifier. values:[1,2,3,4]
@@ -15,7 +15,7 @@ from Utilities import calculate_metrics, choose_classifier, attribute_swap_test,
 data = fetch_adult(as_frame=True)
 dataframe = data.frame
 
-X, y = cross_validation_load(dataframe, 'class')
+[X, y] = preprocess_data(dataframe, 'class')
 
 k_fold = KFold(n_splits=10, shuffle=True, random_state=42)
 
