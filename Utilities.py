@@ -4,7 +4,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import accuracy_score, precision_score, recall_score, confusion_matrix
+from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.model_selection import KFold
 from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import MinMaxScaler
@@ -336,168 +336,40 @@ def pie_plot(features, classes, fav_pred, unfav_pred, unpriv, labels, my_title):
     plt.show()
 
 
-def pre_plot_calculation(X_test, y_test, classifier, c_classifier, priv, unpriv, fav, unfav):
-    """
-    A function used for calculating the Disparate Impact Ratio,accuracy,recall and precision for multiple executions
-    of ROC on 2 different versions of the same type of classifier, 1 is the counterfactually trained.
-    Each time a different value of l is used.
-    :param X_test: the dataframe holding the attributes of the test split
-    :param y_test: the dataframe holding the classes of the test split
-    :param classifier: a variable holding a classifier instance
-    :param c_classifier: a variable holding a counterfactual instance of classifier
-    :param priv: the privileged group
-    :param unpriv: the unprivileged group
-    :param fav: the favourable outcome
-    :param unfav: the unfavourable outcome
-
-    """
-    l_values = []
-    ROC_accuracy = []
-    ROC_DIR = []
-    ROC_samples = []
-    CROC_accuracy = []
-    CROC_DIR = []
-    CROC_samples = []
-
-    done_1 = 0
-    done_2 = 0
-
-    for i in range(1, int(sys.argv[3])):
-        # accuracy, disparate_impact, precision, recall
-        if done_1 == 0:
-
-            a_1, b_1, c_1 = critical_region_test(X_test, y_test, classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
-            ROC_accuracy.append(a_1)
-            ROC_DIR.append(b_1)
-            ROC_samples.append(c_1)
-
-            if b_1 > 1.0:
-                done_1 = 1
-
-        if done_2 == 0:
-            a_2, b_2, c_2 = critical_region_test(X_test, y_test, c_classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
-            CROC_accuracy.append(a_2)
-            CROC_DIR.append(b_2)
-            CROC_samples.append(c_2)
-
-            if b_2 > 1.0:
-                done_2 = 1
-
-        l_values.append(i / 100)
-
-        if done_1 == 1 and done_2 == 1:
-            break
-
-    summary_plot(l_values, ROC_accuracy, CROC_accuracy, 'ROC', 'ROC+MOD', 'critical region', 'Accuracy',
-                 'accuracy vs critical region')
-
-    summary_plot(l_values, ROC_DIR, CROC_DIR, 'ROC', 'ROC+MOD', 'critical region', 'DIR', 'DIR vs critical region')
-
-    summary_plot(l_values, ROC_samples, CROC_samples, 'ROC', 'ROC+MOD', 'critical region', 'samples',
-                 'samples vs critical region')
-
-
-def post_plot_calculation(X_test, y_test, classifier, priv, unpriv, fav, unfav):
-    """
-    A function used for calculating the Disparate Impact Ratio,accuracy,recall and precision for multiple executions
-    of ROC and the attribute_swap + ROC algorithm on the same classifier. Each time a different value of l is used.
-    :param X_test: the dataframe holding the attributes of the test split
-    :param y_test: the dataframe holding the classes of the test split
-    :param classifier: a variable holding a classifier instance
-    :param priv: the privileged group
-    :param unpriv: the unprivileged group
-    :param fav: the favourable outcome
-    :param unfav: the unfavourable outcome
-
-    """
-    l_values = []
-    ROC_accuracy = []
-    ROC_DIR = []
-    ROC_samples = []
-    SROC_accuracy = []
-    SROC_DIR = []
-    SROC_samples = []
-
-    done_1 = 0
-    done_2 = 0
-
-    for i in range(1, int(sys.argv[3])):
-        # accuracy, disparate_impact, precision, recall
-        if done_1 == 0:
-            a_1, b_1, c_1 = critical_region_test(X_test, y_test, classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
-
-            ROC_accuracy.append(a_1)
-            ROC_DIR.append(b_1)
-            ROC_samples.append(c_1)
-
-            if b_1 > 1.0:
-                done_1 = 1
-
-        if done_2 == 0:
-            a_2, b_2, c_2 = attribute_swap_and_critical(X_test, y_test, classifier, unpriv, priv, unfav, fav, 0,
-                                                        i / 100, None)
-
-            SROC_accuracy.append(a_2)
-            SROC_DIR.append(b_2)
-            SROC_samples.append(c_2)
-
-            if b_2 > 1.0:
-                done_2 = 1
-
-        l_values.append(i / 100)
-
-        if done_1 == 1 and done_2 == 1:
-            break
-
-    summary_plot(l_values, ROC_accuracy, SROC_accuracy, 'ROC', 'ROC+MOD', 'critical region', 'Accuracy',
-                 'accuracy vs critical region')
-
-    summary_plot(l_values, ROC_DIR, SROC_DIR, 'ROC', 'ROC+MOD', 'critical region', 'DIR', 'DIR vs critical region')
-
-    summary_plot(l_values, ROC_samples, SROC_samples, 'ROC', 'ROC+MOD', 'critical region', 'samples',
-                 'samples vs critical region')
-
-
-def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds):
+def post_crossval(data, model, priv, unpriv, fav, unfav, folds, crit_region):
     x = data[0]
     y = data[1]
-    x_c = data_c[0]
-    y_c = data_c[1]
 
     k_fold = KFold(n_splits=folds, shuffle=True, random_state=42)
 
     classifier = choose_classifier(model)
 
-    c_classifier = choose_classifier(model)
+    ROC_accuracy = np.zeros(crit_region).tolist()
+    ROC_DIR = np.zeros(crit_region).tolist()
+    ROC_samples = np.zeros(crit_region).tolist()
+    ROC_EQ_OP_D = np.zeros(crit_region).tolist()
+    ROC_ST_P = np.zeros(crit_region).tolist()
 
-    ROC_accuracy = np.zeros(int(sys.argv[2])).tolist()
-    ROC_DIR = np.zeros(int(sys.argv[2])).tolist()
-    ROC_samples = np.zeros(int(sys.argv[2])).tolist()
-    ROC_EQ_OP_D = np.zeros(int(sys.argv[2])).tolist()
-    ROC_ST_P = np.zeros(int(sys.argv[2])).tolist()
+    CROC_accuracy = np.zeros(crit_region).tolist()
+    CROC_DIR = np.zeros(crit_region).tolist()
+    CROC_samples = np.zeros(crit_region).tolist()
+    CROC_EQ_OP_D = np.zeros(crit_region).tolist()
+    CROC_ST_P = np.zeros(crit_region).tolist()
 
-    CROC_accuracy = np.zeros(int(sys.argv[2])).tolist()
-    CROC_DIR = np.zeros(int(sys.argv[2])).tolist()
-    CROC_samples = np.zeros(int(sys.argv[2])).tolist()
-    CROC_EQ_OP_D = np.zeros(int(sys.argv[2])).tolist()
-    CROC_ST_P = np.zeros(int(sys.argv[2])).tolist()
+    l_values = [i / 100 for i in range(0, crit_region)]
 
-    l_values = [i / 100 for i in range(0, int(sys.argv[2]))]
-
-    for (train_indices, test_indices), (train_indices_c, test_indices_c) in zip(k_fold.split(x), k_fold.split(x_c)):
+    for index, (train_indices, test_indices) in enumerate(k_fold.split(x), start=1):
+        #print(f"{COLORS.BRIGHT_GREEN}Accuracy : {accuracy}{COLORS.ENDC}")
+        print(f"{COLORS.MAGENTA}\nFold:{index}{COLORS.ENDC}")
 
         x_train, x_test = x.iloc[train_indices], x.iloc[test_indices]
         y_train, y_test = y.iloc[train_indices], y.iloc[test_indices]
 
-        x_train_c, x_test_c = x_c.iloc[train_indices], x_c.iloc[test_indices]
-        y_train_c, y_test_c = y_c.iloc[train_indices], y_c.iloc[test_indices]
-        # accuracy, disparate_impact, precision, recall
-
-        for i in range(0, int(sys.argv[2])):
+        for i in range(0, crit_region):
             classifier.fit(x_train, y_train)
 
             acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, classifier, unpriv, priv,
-                                                           unfav, fav, 0, i / 100, None)
+                                                                 unfav, fav, 0, i / 100, None)
 
             ROC_accuracy[i] = ROC_accuracy[i] + acc
             ROC_DIR[i] = ROC_DIR[i] + DIR
@@ -505,10 +377,8 @@ def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds):
             ROC_EQ_OP_D[i] = ROC_EQ_OP_D[i] + eq_op_d
             ROC_ST_P[i] = ROC_ST_P[i] + st_p
 
-            c_classifier.fit(x_train_c, y_train_c)
-
-            acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, c_classifier, unpriv, priv, unfav,
-                                                           fav, 0, i / 100, None)
+            acc, DIR, samp, eq_op_d, st_p = attribute_swap_and_critical(x_test, y_test, classifier, unpriv, priv, unfav, fav, 0,
+                                                                        i / 100, None)
 
             CROC_accuracy[i] = CROC_accuracy[i] + acc
             CROC_DIR[i] = CROC_DIR[i] + DIR
@@ -537,6 +407,91 @@ def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds):
     summary_plot(l_values, ROC_EQ_OP_D, CROC_EQ_OP_D, 'ROC', 'ROC+MOD', 'critical region', 'samples', 'EQ of opportunity vs critical region')
 
     summary_plot(l_values, ROC_ST_P, CROC_ST_P, 'ROC', 'ROC+MOD', 'critical region', 'samples', 'Statistical Parity vs critical region')
+
+
+def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds, crit_region):
+    x = data[0]
+    y = data[1]
+    x_c = data_c[0]
+    y_c = data_c[1]
+
+    k_fold = KFold(n_splits=folds, shuffle=True, random_state=42)
+
+    classifier = choose_classifier(model)
+
+    c_classifier = choose_classifier(model)
+
+    ROC_accuracy = np.zeros(crit_region).tolist()
+    ROC_DIR = np.zeros(crit_region).tolist()
+    ROC_samples = np.zeros(crit_region).tolist()
+    ROC_EQ_OP_D = np.zeros(crit_region).tolist()
+    ROC_ST_P = np.zeros(crit_region).tolist()
+
+    CROC_accuracy = np.zeros(crit_region).tolist()
+    CROC_DIR = np.zeros(crit_region).tolist()
+    CROC_samples = np.zeros(crit_region).tolist()
+    CROC_EQ_OP_D = np.zeros(crit_region).tolist()
+    CROC_ST_P = np.zeros(crit_region).tolist()
+
+    l_values = [i / 100 for i in range(0, crit_region)]
+
+    #for (train_indices, test_indices), (train_indices_c, test_indices_c) in zip(k_fold.split(x), k_fold.split(x_c)):
+    for index, ((train_indices, test_indices), (train_indices_c, test_indices_c)) \
+            in enumerate(zip(k_fold.split(x), k_fold.split(x_c)), start=1):
+
+        print(f"{COLORS.MAGENTA}\nFold:{index}{COLORS.ENDC}")
+
+        x_train, x_test = x.iloc[train_indices], x.iloc[test_indices]
+        y_train, y_test = y.iloc[train_indices], y.iloc[test_indices]
+
+        x_train_c, x_test_c = x_c.iloc[train_indices], x_c.iloc[test_indices]
+        y_train_c, y_test_c = y_c.iloc[train_indices], y_c.iloc[test_indices]
+
+        for i in range(0, crit_region):
+            classifier.fit(x_train, y_train)
+
+            acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, classifier, unpriv, priv,
+                                                                 unfav, fav, 0, i / 100, None)
+
+            ROC_accuracy[i] = ROC_accuracy[i] + acc
+            ROC_DIR[i] = ROC_DIR[i] + DIR
+            ROC_samples[i] = ROC_samples[i] + samp
+            ROC_EQ_OP_D[i] = ROC_EQ_OP_D[i] + eq_op_d
+            ROC_ST_P[i] = ROC_ST_P[i] + st_p
+
+            c_classifier.fit(x_train_c, y_train_c)
+
+            acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, c_classifier, unpriv, priv, unfav,
+                                                                 fav, 0, i / 100, None)
+
+            CROC_accuracy[i] = CROC_accuracy[i] + acc
+            CROC_DIR[i] = CROC_DIR[i] + DIR
+            CROC_samples[i] = CROC_samples[i] + samp
+            CROC_EQ_OP_D[i] = CROC_EQ_OP_D[i] + eq_op_d
+            CROC_ST_P[i] = CROC_ST_P[i] + st_p
+
+    ROC_accuracy = [x / folds for x in ROC_accuracy]
+    ROC_DIR = [x / folds for x in ROC_DIR]
+    ROC_samples = [x / folds for x in ROC_samples]
+    ROC_EQ_OP_D = [x / folds for x in ROC_EQ_OP_D]
+    ROC_ST_P = [x / folds for x in ROC_ST_P]
+
+    CROC_accuracy = [x / folds for x in CROC_accuracy]
+    CROC_DIR = [x / folds for x in CROC_DIR]
+    CROC_samples = [x / folds for x in CROC_samples]
+    CROC_EQ_OP_D = [x / folds for x in CROC_EQ_OP_D]
+    CROC_ST_P = [x / folds for x in CROC_ST_P]
+
+    summary_plot(l_values, ROC_accuracy, CROC_accuracy, 'ROC', 'ROC+MOD', 'critical region', 'Accuracy', 'accuracy vs critical region')
+
+    summary_plot(l_values, ROC_DIR, CROC_DIR, 'ROC', 'ROC+MOD', 'critical region', 'DIR', 'DIR vs critical region')
+
+    summary_plot(l_values, ROC_samples, CROC_samples, 'ROC', 'ROC+MOD', 'critical region', 'samples', 'samples vs critical region')
+
+    summary_plot(l_values, ROC_EQ_OP_D, CROC_EQ_OP_D, 'ROC', 'ROC+MOD', 'critical region', 'samples', 'EQ of opportunity vs critical region')
+
+    summary_plot(l_values, ROC_ST_P, CROC_ST_P, 'ROC', 'ROC+MOD', 'critical region', 'samples', 'Statistical Parity vs critical region')
+
 
 def partitioning(lower_bound, upper_bound, classifier_prob):
     """
@@ -584,7 +539,7 @@ def critical_region_test(x, y, classifier, unpriv, priv, unfav, fav, lower_bound
         else:
             pred4[indexes[iteration_number]] = fav
 
-    print(f"\ncritical_region_test l: {upper_bound}")
+    print(f"\ncritical region : {upper_bound}")
     print(f"{COLORS.RED}Elements in critical region: {len(indexes)}{COLORS.ENDC}")
 
     if print_function == adult_pie:
@@ -630,7 +585,7 @@ def attribute_swap_and_critical(x, y, classifier, unpriv, priv, unfav, fav, lowe
         else:
             pred3[indexes[iteration_number]] = fav
 
-    print(f"\nattribute_swap_and_critical l: {upper_bound}")
+    print(f"\nCritical region : {upper_bound}")
     print(f"{COLORS.RED}Elements in critical region: {len(indexes)}{COLORS.ENDC}")
 
     if print_function == adult_pie:
@@ -638,6 +593,6 @@ def attribute_swap_and_critical(x, y, classifier, unpriv, priv, unfav, fav, lowe
     elif print_function == crime_pie:
         print_function(x, pred3, unfav, fav, f'attribute_swap_and_critical l: {upper_bound}')
 
-    a, b = calculate_metrics(y, pred3, x_copy, unpriv, fav)
+    a, b, c, d = calculate_metrics(y, pred3, x_copy, unpriv, fav)
 
-    return a, b, len(indexes)
+    return a, b, len(indexes), c, d
