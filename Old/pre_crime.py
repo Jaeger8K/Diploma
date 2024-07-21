@@ -5,7 +5,7 @@ from fairlearn.datasets import fetch_adult
 from sklearn.model_selection import KFold
 from ucimlrepo import fetch_ucirepo
 
-from Utilities import preprocess_data, choose_classifier, preprocess_counterfactual_dataset, pre_crossval
+from utilities import preprocess_data, choose_classifier, preprocess_counterfactual_dataset, pre_crossval
 
 """
 :param sys.argv[1]: contains the choice of classifier. values:[1,2,3,4]

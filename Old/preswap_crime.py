@@ -2,7 +2,7 @@ import sys
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
-from Utilities import preprocess_data, choose_classifier, crime_pie, calculate_metrics,preprocess_counterfactual_dataset, pre_plot_calculation
+from utilities import preprocess_data, choose_classifier, crime_pie, calculate_metrics,preprocess_counterfactual_dataset, pre_plot_calculation
 
 """
 :param sys.argv[1]: contains the size of the test split. values:[0.1 -0.9]

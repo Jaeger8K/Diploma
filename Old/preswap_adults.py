@@ -1,7 +1,7 @@
 import sys
 from fairlearn.datasets import fetch_adult
 from sklearn.model_selection import train_test_split
-from Utilities import preprocess_counterfactual_dataset, preprocess_data, choose_classifier, calculate_metrics, adult_pie,pre_plot_calculation
+from utilities import preprocess_counterfactual_dataset, preprocess_data, choose_classifier, calculate_metrics, adult_pie,pre_plot_calculation
 
 """
 :param sys.argv[1]: contains the size of the test split. values:[0.1 -0.9]

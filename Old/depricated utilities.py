@@ -7,7 +7,7 @@ from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
 
-from Utilities import summary_plot, critical_region_test
+from utilities import summary_plot, critical_region_test
 
 
 def bank_pie(features, classes, fav_pred, unfav_pred, my_title):

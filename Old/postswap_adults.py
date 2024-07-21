@@ -1,7 +1,7 @@
 import sys
 from fairlearn.datasets import fetch_adult
 from sklearn.model_selection import train_test_split
-from Utilities import calculate_metrics, choose_classifier, preprocess_data, adult_pie, \
+from utilities import calculate_metrics, choose_classifier, preprocess_data, adult_pie, \
     post_plot_calculation, pie_plot
 
 """

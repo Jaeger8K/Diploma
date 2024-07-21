@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 from sklearn.metrics import accuracy_score
-from Utilities import choose_classifier, preprocess_data, handle_age
+from utilities import choose_classifier, preprocess_data, handle_age
 
 '''
 cb_person_default_on_file could indicate whether a person has a default entry on their credit report.

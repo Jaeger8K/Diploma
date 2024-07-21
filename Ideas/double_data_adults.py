@@ -1,6 +1,6 @@
 from fairlearn.datasets import fetch_adult
 
-from Utilities import double_data, choose_classifier, adult_pie, calculate_metrics, preprocess_data
+from utilities import double_data, choose_classifier, adult_pie, calculate_metrics, preprocess_data
 
 data = fetch_adult(as_frame=True)
 

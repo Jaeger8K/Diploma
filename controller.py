@@ -2,7 +2,8 @@ import sys
 import pandas as pd
 from fairlearn.datasets import fetch_adult
 from ucimlrepo import fetch_ucirepo
-from Utilities import preprocess_data, preprocess_counterfactual_dataset, pre_crossval, post_crossval
+from utilities import preprocess_data, preprocess_counterfactual_dataset, pre_crossval, post_crossval, Calibrated_eq_odds, normalization, \
+    adult_pie
 
 """
 :param sys.argv[1]: contains the choice of dataset. values:[1,2]
@@ -17,6 +18,8 @@ from Utilities import preprocess_data, preprocess_counterfactual_dataset, pre_cr
 def dataset_selection(input):
     if input == 1:
         data = fetch_adult(as_frame=True)
+
+        adult_pie(data.frame.drop(columns=['class']), data.frame['class'], '>50K', '<=50K', 'dataset distribution')
 
         return data.frame, 'class', 'sex', 'sex_Male', 'sex_Female', '>50K', '<=50K'
 
@@ -41,6 +44,8 @@ def dataset_selection(input):
 dataframe, class_at, prot_at, priv, unpriv, fav, unfav = dataset_selection(int(sys.argv[1]))
 
 a = preprocess_data(dataframe, class_at)
+
+# Calibrated_eq_odds(dataframe, sys.argv[2], unpriv, priv, unfav, fav, prot_at, class_at, int(sys.argv[4]))
 
 if int(sys.argv[3]) == 1:
 

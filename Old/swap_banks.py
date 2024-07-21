@@ -1,7 +1,7 @@
 import pandas as pd
 from sklearn.metrics import accuracy_score
 
-from Utilities import choose_classifier, preprocess_data, handle_age, bank_pie, partitioning, calculate_metrics, \
+from utilities import choose_classifier, preprocess_data, handle_age, bank_pie, partitioning, calculate_metrics, \
     critical_region_test
 
 

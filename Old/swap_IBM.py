@@ -1,6 +1,6 @@
 import pandas as pd
 
-from Utilities import preprocess_data, choose_classifier, calculate_metrics, attribute_swap_test, adult_pie
+from utilities import preprocess_data, choose_classifier, calculate_metrics, attribute_swap_test, adult_pie
 
 data = pd.read_csv('../Datasets/ΙΒΜ_attrition.csv')
 

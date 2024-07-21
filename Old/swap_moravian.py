@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from Utilities import preprocess_data, choose_classifier, calculate_metrics
+from utilities import preprocess_data, choose_classifier, calculate_metrics
 
 
 def initialize_data(d):

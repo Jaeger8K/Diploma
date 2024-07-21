@@ -2,7 +2,7 @@ import sys
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from ucimlrepo import fetch_ucirepo
-from Utilities import preprocess_data, choose_classifier, crime_pie, calculate_metrics, \
+from utilities import preprocess_data, choose_classifier, crime_pie, calculate_metrics, \
                        post_plot_calculation, pie_plot
 
 """
