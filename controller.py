@@ -1,6 +1,7 @@
 import sys
 import pandas as pd
 from fairlearn.datasets import fetch_adult
+from matplotlib import pyplot as plt
 from ucimlrepo import fetch_ucirepo
 from utilities import preprocess_data, preprocess_counterfactual_dataset, pre_crossval, post_crossval, Calibrated_eq_odds, normalization, \
     adult_pie
@@ -40,6 +41,19 @@ def dataset_selection(input):
         return dataframe, 'ViolentCrimesPerPop', 'racepctblack', 'racepctblack_privileged',\
             'racepctblack_unprivileged', 'Low_crime', 'High_crime'
 
+    elif input == 3:
+
+        columns = ['ex_acc', 'duration', 'cr_history', 'purpose', 'cr_am,' 'savings', 'present_em', 'installment_rate', 'sex',
+                   'debtors', 'present_residence', 'property', 'age', 'other_in', 'housing', 'ex_cr', 'job', 'n_people', 'telephone',
+                   'foreign_worker', 'class']
+
+        # Read the file
+        dataframe = pd.read_csv('Datasets/german.data', sep='\s+', names=columns, header=None)
+        dataframe['sex'] = dataframe['sex'].replace({'A91': 'male', 'A93': 'male', 'A94': 'male', 'A92': 'female'})
+        dataframe['class'] = dataframe['class'].replace({1: 'Good', 2: 'Bad'})
+
+        return dataframe, 'class', 'sex', 'sex_male','sex_female', 'Good', 'Bad'
+
 
 dataframe, class_at, prot_at, priv, unpriv, fav, unfav = dataset_selection(int(sys.argv[1]))
 
@@ -51,7 +65,9 @@ if int(sys.argv[3]) == 1:
 
     b = preprocess_counterfactual_dataset(dataframe, class_at, prot_at)
 
-    pre_crossval(a, b, sys.argv[2], priv, unpriv, fav, unfav, int(sys.argv[5]), int(sys.argv[4]))
+    pre_crossval(a, b, sys.argv[2], priv, unpriv, fav, unfav, int(sys.argv[5]), int(sys.argv[4]), 54)
 
 elif int(sys.argv[3]) == 2:
-    post_crossval(a, sys.argv[2], priv, unpriv, fav, unfav, int(sys.argv[5]), int(sys.argv[4]))
+    post_crossval(a, sys.argv[2], priv, unpriv, fav, unfav, int(sys.argv[5]), int(sys.argv[4]), 54)
+
+plt.show()

@@ -66,6 +66,7 @@ def double_data(dataframe, test_size, protected_attributes, class_label):
 
     return train_test_split(x_dummies, y, test_size=test_size, random_state=1)
 
+
 def handle_age(data, label, low, high):
     """
     A simple function used for assigning values to the person_age label of the bank_dataset
@@ -85,6 +86,7 @@ def handle_age(data, label, low, high):
 
     # Update the 'person_age' column based on conditions
     data[label] = np.select(conditions, values, default=data[label])
+
 
 def pre_plot_calculation(X_test, y_test, classifier, c_classifier, priv, unpriv, fav, unfav):
     """
@@ -145,6 +147,7 @@ def pre_plot_calculation(X_test, y_test, classifier, c_classifier, priv, unpriv,
 
     summary_plot(l_values, ROC_samples, CROC_samples, 'ROC', 'ROC+MOD', 'critical region', 'samples',
                  'samples vs critical region')
+
 
 def post_plot_calculation(X_test, y_test, classifier, priv, unpriv, fav, unfav):
     """
@@ -240,3 +243,17 @@ def calculate_metrics(y_test, y_pred, x_test, priv, fav_out):
     # print(a, b)
 
     return accuracy, disparate_impact
+
+
+def pie_plot(features, classes, fav_pred, unfav_pred, unpriv, labels, my_title):
+    plt.title(my_title)
+    a = sum(classes[features[unpriv] == True] == fav_pred)
+    b = sum(classes[features[unpriv] == True] == unfav_pred)
+    c = sum(classes[features[unpriv] == False] == fav_pred)
+    d = sum(classes[features[unpriv] == False] == unfav_pred)
+
+    plt.pie(np.array([a, c, b, d]), labels=labels, autopct=lambda p: '{:.0f}'.format(p * len(features) / 100))
+
+    plt.gcf().set_size_inches(7, 4)
+
+    plt.show()

@@ -1,8 +1,7 @@
-import sys
 import numpy as np
 import pandas as pd
-from aif360.algorithms.postprocessing import CalibratedEqOddsPostprocessing
-from aif360.datasets import BinaryLabelDataset
+# from aif360.algorithms.postprocessing import CalibratedEqOddsPostprocessing
+# from aif360.datasets import BinaryLabelDataset
 from matplotlib import pyplot as plt
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -189,7 +188,7 @@ def choose_classifier(model_selection):
         m = RandomForestClassifier(max_depth=5, random_state=0)
 
     elif model_selection == "3":  # works, needs more iterations, takes time
-        m = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1, max_iter=1300)
+        m = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1, max_iter=2200)
 
     elif model_selection == "4":  # works, needs more iterations, takes time
         m = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1, max_iter=1300)
@@ -225,18 +224,21 @@ def calculate_metrics(y_test, y_pred, x_test, priv, fav_out):
     :return: the function returns the values of the Disparate Impact Ratio, accuracy,
              Equal Opportunity Difference, and Statistical Parity Difference of the classifier
     """
+
     priv_mask = x_test[priv] == True
     unpriv_mask = x_test[priv] == False
 
     # Calculate the accuracy
     accuracy = accuracy_score(y_test, y_pred)
-    print(f"{COLORS.BRIGHT_GREEN}Accuracy : {accuracy}{COLORS.ENDC}")
+    #print(f"{COLORS.BRIGHT_GREEN}Accuracy : {accuracy}{COLORS.ENDC}")
+    print(f"{COLORS.BRIGHT_GREEN}{accuracy}{COLORS.ENDC}")
 
     # Calculate Disparate Impact Ratio
     a = ((y_pred == fav_out) & (unpriv_mask)).sum() / (unpriv_mask).sum()
     b = ((y_pred == fav_out) & (priv_mask)).sum() / (priv_mask).sum()
     disparate_impact = a / b
-    print(f"{COLORS.HEADER}Disparate Impact Ratio: {disparate_impact}{COLORS.ENDC}")
+    #print(f"{COLORS.HEADER}Disparate Impact Ratio: {disparate_impact}{COLORS.ENDC}")
+    print(f"{COLORS.HEADER}{disparate_impact}{COLORS.ENDC}")
 
     # Calculate Equal Opportunity Difference
     cm_priv = confusion_matrix(y_test[priv_mask], y_pred[priv_mask])
@@ -244,13 +246,15 @@ def calculate_metrics(y_test, y_pred, x_test, priv, fav_out):
     tpr_priv = cm_priv[1, 1] / (cm_priv[1, 1] + cm_priv[1, 0])
     tpr_unpriv = cm_unpriv[1, 1] / (cm_unpriv[1, 1] + cm_unpriv[1, 0])
     equal_opp_diff = tpr_priv - tpr_unpriv
-    print(f"{COLORS.BRIGHT_BLUE}Equal Opportunity Difference: {equal_opp_diff}{COLORS.ENDC}")
+    #print(f"{COLORS.BRIGHT_BLUE}Equal Opportunity Difference: {equal_opp_diff}{COLORS.ENDC}")
+    print(f"{COLORS.BRIGHT_BLUE}{equal_opp_diff}{COLORS.ENDC}")
 
     # Calculate Statistical Parity Difference
     prob_pos_priv = (y_pred[priv_mask] == fav_out).mean()
     prob_pos_unpriv = (y_pred[unpriv_mask] == fav_out).mean()
     stat_parity_diff = prob_pos_priv - prob_pos_unpriv
-    print(f"{COLORS.BRIGHT_YELLOW}Statistical Parity Difference: {stat_parity_diff}{COLORS.ENDC}")
+    #print(f"{COLORS.BRIGHT_YELLOW}Statistical Parity Difference: {stat_parity_diff}{COLORS.ENDC}")
+    print(f"{COLORS.BRIGHT_YELLOW}{stat_parity_diff}{COLORS.ENDC}")
 
     return accuracy, disparate_impact, equal_opp_diff, stat_parity_diff
 
@@ -284,6 +288,9 @@ def normalised_adult_pie(features, classes, fav_pred, unfav_pred, my_title):
     :param my_title: a string displayed on the produced plot
 
     """
+
+    plt.figure()
+
     plt.title(my_title)
     rich_women = sum(classes[features['sex_Female'] == True] == fav_pred)
     poor_women = sum(classes[features['sex_Female'] == True] == unfav_pred)
@@ -296,8 +303,6 @@ def normalised_adult_pie(features, classes, fav_pred, unfav_pred, my_title):
 
     plt.gcf().set_size_inches(7, 4)
 
-    plt.show()
-
 
 def adult_pie(features, classes, fav_pred, unfav_pred, my_title):
     """
@@ -309,6 +314,9 @@ def adult_pie(features, classes, fav_pred, unfav_pred, my_title):
     :param my_title: a string displayed on the produced plot
 
     """
+
+    plt.figure()
+
     plt.title(my_title)
     rich_women = sum(classes[features['sex'] == 'Female'] == fav_pred)
     poor_women = sum(classes[features['sex'] == 'Female'] == unfav_pred)
@@ -321,8 +329,6 @@ def adult_pie(features, classes, fav_pred, unfav_pred, my_title):
 
     plt.gcf().set_size_inches(7, 4)
 
-    plt.show()
-
 
 def crime_pie(features, classes, fav_pred, unfav_pred, my_title):
     """
@@ -334,6 +340,9 @@ def crime_pie(features, classes, fav_pred, unfav_pred, my_title):
     :param my_title: a string displayed on the produced plot
 
     """
+
+    plt.figure()
+
     plt.title(my_title)
     a = sum(classes[features['racepctblack_unprivileged'] == True] == fav_pred)
     b = sum(classes[features['racepctblack_unprivileged'] == True] == unfav_pred)
@@ -346,30 +355,14 @@ def crime_pie(features, classes, fav_pred, unfav_pred, my_title):
 
     plt.gcf().set_size_inches(7, 4)
 
-    plt.show()
 
-
-def pie_plot(features, classes, fav_pred, unfav_pred, unpriv, labels, my_title):
-    plt.title(my_title)
-    a = sum(classes[features[unpriv] == True] == fav_pred)
-    b = sum(classes[features[unpriv] == True] == unfav_pred)
-    c = sum(classes[features[unpriv] == False] == fav_pred)
-    d = sum(classes[features[unpriv] == False] == unfav_pred)
-
-    plt.pie(np.array([a, c, b, d]), labels=labels, autopct=lambda p: '{:.0f}'.format(p * len(features) / 100))
-
-    plt.gcf().set_size_inches(7, 4)
-
-    plt.show()
-
-
-def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds, crit_region):
+def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds, crit_region, seed):
     x = data[0]
     y = data[1]
     x_c = data_c[0]
     y_c = data_c[1]
 
-    k_fold = KFold(n_splits=folds, shuffle=True, random_state=42)
+    k_fold = KFold(n_splits=folds, shuffle=True, random_state=seed)
 
     classifier = choose_classifier(model)
 
@@ -405,7 +398,7 @@ def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds, crit_regi
         for i in range(0, crit_region):
             classifier.fit(x_train, y_train)
 
-            if i+1 == crit_region:
+            if i + 1 == crit_region:
 
                 acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, classifier, unpriv, priv,
                                                                      unfav, fav, 0, i / 100, normalised_adult_pie)
@@ -423,12 +416,12 @@ def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds, crit_regi
 
             print()
 
-            if i+1 == crit_region:
+            if i + 1 == crit_region:
                 acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, c_classifier, unpriv, priv, unfav,
-                                                                    fav, 0, i / 100, normalised_adult_pie)
+                                                                     fav, 0, i / 100, normalised_adult_pie)
             else:
                 acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, c_classifier, unpriv, priv, unfav,
-                                                                    fav, 0, i / 100, None)
+                                                                     fav, 0, i / 100, None)
 
             CROC_accuracy[i] = CROC_accuracy[i] + acc
             CROC_DIR[i] = CROC_DIR[i] + DIR
@@ -449,7 +442,6 @@ def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds, crit_regi
         CROC_ST_P = [x / folds for x in CROC_ST_P]
 
     if crit_region != 1:
-
         summary_plot(l_values, ROC_accuracy, CROC_accuracy, 'ROC', 'ROC+MOD', 'critical region',
                      'Accuracy', 'accuracy vs critical region')
 
@@ -466,11 +458,11 @@ def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds, crit_regi
                      'samples', 'Statistical Parity vs critical region')
 
 
-def post_crossval(data, model, priv, unpriv, fav, unfav, folds, crit_region):
+def post_crossval(data, model, priv, unpriv, fav, unfav, folds, crit_region, seed):
     x = data[0]
     y = data[1]
 
-    k_fold = KFold(n_splits=folds, shuffle=True, random_state=42)
+    k_fold = KFold(n_splits=folds, shuffle=True, random_state=seed)
 
     classifier = choose_classifier(model)
 
