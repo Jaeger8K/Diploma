@@ -257,3 +257,110 @@ def pie_plot(features, classes, fav_pred, unfav_pred, unpriv, labels, my_title):
     plt.gcf().set_size_inches(7, 4)
 
     plt.show()
+def pre_crossval(data, data_c, model , priv, unpriv, fav, unfav, folds, crit_region, seed, pie):
+    pie_functions = [adult_pie, crime_pie, bank_pie]
+
+    x = data[0]
+    y = data[1]
+    x_c = data_c[0]
+    y_c = data_c[1]
+
+    k_fold = KFold(n_splits=folds, shuffle=True, random_state=seed)
+
+    classifier = choose_classifier(model)
+
+    c_classifier = choose_classifier(model)
+
+    ROC_accuracy = np.zeros(crit_region).tolist()
+    ROC_DIR = np.zeros(crit_region).tolist()
+    ROC_samples = np.zeros(crit_region).tolist()
+    ROC_EQ_OP_D = np.zeros(crit_region).tolist()
+    ROC_ST_P = np.zeros(crit_region).tolist()
+
+    CROC_accuracy = np.zeros(crit_region).tolist()
+    CROC_DIR = np.zeros(crit_region).tolist()
+    CROC_samples = np.zeros(crit_region).tolist()
+    CROC_EQ_OP_D = np.zeros(crit_region).tolist()
+    CROC_ST_P = np.zeros(crit_region).tolist()
+
+    l_values = [i / 100 for i in range(0, crit_region)]
+
+    for index, ((train_indices, test_indices), (train_indices_c, test_indices_c)) \
+            in enumerate(zip(k_fold.split(x), k_fold.split(x_c)), start=1):
+
+        print(f"{COLORS.MAGENTA}\nFold:{index}{COLORS.ENDC}")
+
+        x_train, x_test = x.iloc[train_indices], x.iloc[test_indices]
+        y_train, y_test = y.iloc[train_indices], y.iloc[test_indices]
+
+        pie_functions[pie](x_test, y_test, fav, unfav, f"Fold:{index} distribution")
+
+        x_train_c, x_test_c = x_c.iloc[train_indices], x_c.iloc[test_indices]
+        y_train_c, y_test_c = y_c.iloc[train_indices], y_c.iloc[test_indices]
+
+        if pie == 1: #special case for crime dataset
+            temp = fav
+            fav = unfav
+            unfav = temp
+            priv = unpriv
+
+        for i in range(0, crit_region):
+            classifier.fit(x_train, y_train)
+            c_classifier.fit(x_train_c, y_train_c)
+
+            if i + 1 == crit_region:
+
+                acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, classifier, priv,
+                                                                     unfav, fav, 0, i / 100, pie_functions[pie])
+            else:
+                acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, classifier, priv,
+                                                                     unfav, fav, 0, i / 100, None)
+
+            ROC_accuracy[i] = ROC_accuracy[i] + acc
+            ROC_DIR[i] = ROC_DIR[i] + DIR
+            ROC_samples[i] = ROC_samples[i] + samp
+            ROC_EQ_OP_D[i] = ROC_EQ_OP_D[i] + eq_op_d
+            ROC_ST_P[i] = ROC_ST_P[i] + st_p
+
+            print()
+
+            if i + 1 == crit_region:
+                acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, c_classifier, priv, unfav,
+                                                                     fav, 0, i / 100, pie_functions[pie])
+            else:
+                acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, c_classifier, priv, unfav,
+                                                                     fav, 0, i / 100, None)
+
+            CROC_accuracy[i] = CROC_accuracy[i] + acc
+            CROC_DIR[i] = CROC_DIR[i] + DIR
+            CROC_samples[i] = CROC_samples[i] + samp
+            CROC_EQ_OP_D[i] = CROC_EQ_OP_D[i] + eq_op_d
+            CROC_ST_P[i] = CROC_ST_P[i] + st_p
+
+        ROC_accuracy = [x / folds for x in ROC_accuracy]
+        ROC_DIR = [x / folds for x in ROC_DIR]
+        ROC_samples = [x / folds for x in ROC_samples]
+        ROC_EQ_OP_D = [x / folds for x in ROC_EQ_OP_D]
+        ROC_ST_P = [x / folds for x in ROC_ST_P]
+
+        CROC_accuracy = [x / folds for x in CROC_accuracy]
+        CROC_DIR = [x / folds for x in CROC_DIR]
+        CROC_samples = [x / folds for x in CROC_samples]
+        CROC_EQ_OP_D = [x / folds for x in CROC_EQ_OP_D]
+        CROC_ST_P = [x / folds for x in CROC_ST_P]
+
+    if crit_region != 1:
+        summary_plot(l_values, ROC_accuracy, CROC_accuracy, 'ROC', 'ROC+MOD', 'critical region',
+                     'Accuracy', 'accuracy vs critical region')
+
+        summary_plot(l_values, ROC_DIR, CROC_DIR, 'ROC', 'ROC+MOD', 'critical region', 'DIR',
+                     'DIR vs critical region')
+
+        summary_plot(l_values, ROC_samples, CROC_samples, 'ROC', 'ROC+MOD', 'critical region',
+                     'samples', 'samples vs critical region')
+
+        summary_plot(l_values, ROC_EQ_OP_D, CROC_EQ_OP_D, 'ROC', 'ROC+MOD', 'critical region',
+                     'samples', 'EQ of opportunity vs critical region')
+
+        summary_plot(l_values, ROC_ST_P, CROC_ST_P, 'ROC', 'ROC+MOD', 'critical region',
+                     'samples', 'Statistical Parity vs critical region')

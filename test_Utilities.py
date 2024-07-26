@@ -1,5 +1,5 @@
-"""# Define column names based on the header in the image
-
+# Define column names based on the header in the image
+import pandas as pd
 
 columns = ['ex_acc', 'duration', 'cr_history', 'purpose', 'cr_am,' 'savings', 'present_em', 'installment_rate', 'personal_status_sex',
            'debtors', 'present_residence', 'property', 'age', 'other_in', 'housing', 'ex_cr', 'job', 'n_people', 'telephone', 'foreign_worker', 'class']
@@ -22,7 +22,8 @@ count = ((df['personal_status_sex'] == 'female') & (df['class'] == 'Good')).sum(
 print(f"Number of elements with 'female' in personal_status_sex and 'Good' in class: {count}")
 
 count = ((df['personal_status_sex'] == 'female') & (df['class'] == 'Bad')).sum()
-print(f"Number of elements with 'female' in personal_status_sex and 'Bad' in class: {count}")"""
+print(f"Number of elements with 'female' in personal_status_sex and 'Bad' in class: {count}")
+"""
 import pandas as pd
 
 df = pd.read_csv('Datasets/bank-full.csv', sep=';', quotechar='"')
@@ -39,3 +40,4 @@ print(((df['poutcome'] == 'other') & (df['y'] == 'no')).sum())
 print(((df['poutcome'] == 'other') & (df['y'] == 'yes')).sum())
 print(((df['poutcome'] == 'unknown') & (df['y'] == 'no')).sum())
 print(((df['poutcome'] == 'unknown') & (df['y'] == 'yes')).sum())
+"""

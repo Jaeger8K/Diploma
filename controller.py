@@ -3,11 +3,10 @@ import pandas as pd
 from fairlearn.datasets import fetch_adult
 from matplotlib import pyplot as plt
 from ucimlrepo import fetch_ucirepo
-from utilities import preprocess_data, preprocess_counterfactual_dataset, pre_crossval, post_crossval, Calibrated_eq_odds, normalization, \
-    adult_pie
+from utilities import preprocess_data, preprocess_counterfactual_dataset, pre_crossval, post_crossval, adult_pie, crime_pie, bank_pie
 
 """
-:param sys.argv[1]: contains the choice of dataset. values:[1,2]
+:param sys.argv[1]: contains the choice of dataset. values:[1,2,3]
 :param sys.argv[2]: contains the choice of classifier. values:[1,2,3,4]
 :param sys.argv[3]: contains the choice of algorithm. values:[1,2]
 :param sys.argv[4]: contains highest value of the critical region. values:[1-90]
@@ -38,8 +37,10 @@ def dataset_selection(input):
         dataframe['ViolentCrimesPerPop'] = dataframe['ViolentCrimesPerPop'].apply(lambda x: 'Low_crime' if x < 0.3 else 'High_crime')
         dataframe['racepctblack'] = dataframe['racepctblack'].apply(lambda x: 'privileged' if x < 0.06 else 'unprivileged')
 
-        return dataframe, 'ViolentCrimesPerPop', 'racepctblack', 'racepctblack_privileged',\
-            'racepctblack_unprivileged', 'Low_crime', 'High_crime'
+        crime_pie(dataframe.drop(columns=['ViolentCrimesPerPop']), dataframe['ViolentCrimesPerPop'], 'Low_crime', 'High_crime',
+                  'dataset distribution')
+
+        return dataframe, 'ViolentCrimesPerPop', 'racepctblack', 'racepctblack_privileged', 'racepctblack_unprivileged', 'Low_crime', 'High_crime'
 
     elif input == 3:
 
@@ -52,22 +53,22 @@ def dataset_selection(input):
         dataframe['sex'] = dataframe['sex'].replace({'A91': 'male', 'A93': 'male', 'A94': 'male', 'A92': 'female'})
         dataframe['class'] = dataframe['class'].replace({1: 'Good', 2: 'Bad'})
 
-        return dataframe, 'class', 'sex', 'sex_male','sex_female', 'Good', 'Bad'
+        bank_pie(dataframe.drop(columns=['class']), dataframe['class'], 'Good', 'Bad', 'dataset distribution')
+
+        return dataframe, 'class', 'sex', 'sex_male', 'sex_female', 'Good', 'Bad'
 
 
 dataframe, class_at, prot_at, priv, unpriv, fav, unfav = dataset_selection(int(sys.argv[1]))
 
 a = preprocess_data(dataframe, class_at)
 
-# Calibrated_eq_odds(dataframe, sys.argv[2], unpriv, priv, unfav, fav, prot_at, class_at, int(sys.argv[4]))
-
 if int(sys.argv[3]) == 1:
 
     b = preprocess_counterfactual_dataset(dataframe, class_at, prot_at)
 
-    pre_crossval(a, b, sys.argv[2], priv, unpriv, fav, unfav, int(sys.argv[5]), int(sys.argv[4]), 54)
+    pre_crossval(a, b, sys.argv[2], priv, unpriv, fav, unfav, int(sys.argv[5]), int(sys.argv[4]), 42, int(sys.argv[1]) - 1)
 
 elif int(sys.argv[3]) == 2:
-    post_crossval(a, sys.argv[2], priv, unpriv, fav, unfav, int(sys.argv[5]), int(sys.argv[4]), 54)
+    post_crossval(a, sys.argv[2], priv, unpriv, fav, unfav, int(sys.argv[5]), int(sys.argv[4]), 42)
 
 plt.show()
