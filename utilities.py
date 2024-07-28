@@ -182,21 +182,21 @@ def choose_classifier(model_selection):
     m = 0
 
     if model_selection == "1":  # works
-        m = LogisticRegression(random_state=16, max_iter=1000)
+        m = LogisticRegression(random_state=16, max_iter=1500)
 
     elif model_selection == "2":  # works
-        m = RandomForestClassifier(max_depth=5, random_state=0)
+        m = RandomForestClassifier(max_depth=20, random_state=0)  # ad (k=5) cr (k=6) k=7 bank (k=20)
         # m = DecisionTreeClassifier(random_state=42)
-        # m = KNeighborsClassifier(n_neighbors=5)
+        # m = KNeighborsClassifier(n_neighbors=6)# ad k=3 cr k=2 (k=3) k=4 bank k=4
 
     elif model_selection == "3":  # works, needs more iterations, takes time
         m = MLPClassifier(solver='lbfgs', alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1, max_iter=2200)
 
     elif model_selection == "4":  # works, needs more iterations, takes time
-        m = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1, max_iter=1300)
+        m = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(5, 2), random_state=1, max_iter=2200)
 
-    # elif model_selection == "4":  # works
-    #    m = DecisionTreeClassifier(min_samples_leaf=10, max_depth=4)
+    elif model_selection == "5":  # works, needs more iterations, takes time
+        m = MLPClassifier(solver='adam', alpha=1e-5, hidden_layer_sizes=(3, 2), random_state=1, max_iter=2200)
 
     # elif model_selection == "4":  # works
     #    m = GaussianNB()
@@ -266,6 +266,8 @@ def summary_plot(a, b, c, d, e, f, g, h):
     A function used for creating plots from the information gathered in the function plot_calculation.
 
     """
+    plt.figure()
+
     # Plotting
     plt.plot(a[:len(b)], b, label=d)
     plt.plot(a[:len(c)], c, label=e)
@@ -277,7 +279,7 @@ def summary_plot(a, b, c, d, e, f, g, h):
     plt.legend()
 
     # Show plot
-    plt.show()
+    # plt.show()
 
 
 def adult_pie(features, classes, fav_pred, unfav_pred, my_title):
@@ -389,7 +391,7 @@ def bank_pie(features, classes, fav_pred, unfav_pred, my_title):
     plt.gcf().set_size_inches(7, 4)
 
 
-def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds, crit_region, seed, pie):
+def pre_crossval(data, data_c, model, priv, fav, unfav, folds, crit_region, seed, pie):
     pie_functions = [adult_pie, crime_pie, bank_pie]
     x, y = data
     x_c, y_c = data_c
@@ -420,9 +422,9 @@ def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds, crit_regi
 
         for i in range(crit_region):
             for clf, metric_dict in [(classifier, ROC_metrics), (c_classifier, CROC_metrics)]:
-                print(metric_dict)
+                print()
                 pie_func = pie_functions[pie] if i + 1 == crit_region else None
-                results = critical_region_test(x_test, y_test, clf, priv, unfav, fav, 0, i / 100, pie_func)
+                results = critical_region_test(x_test, y_test, clf, priv, unfav, fav, 0, 0, pie_func)
 
                 for m, value in zip(metrics, results):
                     metric_dict[m][i] += value
@@ -440,81 +442,42 @@ def pre_crossval(data, data_c, model, priv, unpriv, fav, unfav, folds, crit_regi
 
 
 def post_crossval(data, model, priv, unpriv, fav, unfav, folds, crit_region, seed):
-    x = data[0]
-    y = data[1]
-
+    x, y = data
     k_fold = KFold(n_splits=folds, shuffle=True, random_state=seed)
-
     classifier = choose_classifier(model)
 
-    ROC_accuracy = np.zeros(crit_region).tolist()
-    ROC_DIR = np.zeros(crit_region).tolist()
-    ROC_samples = np.zeros(crit_region).tolist()
-    ROC_EQ_OP_D = np.zeros(crit_region).tolist()
-    ROC_ST_P = np.zeros(crit_region).tolist()
-
-    CROC_accuracy = np.zeros(crit_region).tolist()
-    CROC_DIR = np.zeros(crit_region).tolist()
-    CROC_samples = np.zeros(crit_region).tolist()
-    CROC_EQ_OP_D = np.zeros(crit_region).tolist()
-    CROC_ST_P = np.zeros(crit_region).tolist()
-
-    l_values = [i / 100 for i in range(0, crit_region)]
+    metrics = ['Accuracy', 'Disparate Impact Ratio', 'samples', 'Equal Opportunity Difference', 'Statistical Parity Difference']
+    ROC_metrics = {m: [0] * crit_region for m in metrics}
+    CROC_metrics = {m: [0] * crit_region for m in metrics}
+    l_values = [i / 100 for i in range(crit_region)]
 
     for index, (train_indices, test_indices) in enumerate(k_fold.split(x), start=1):
         print(f"{COLORS.MAGENTA}\nFold:{index}{COLORS.ENDC}")
-
         x_train, x_test = x.iloc[train_indices], x.iloc[test_indices]
         y_train, y_test = y.iloc[train_indices], y.iloc[test_indices]
 
-        for i in range(0, crit_region):
-            classifier.fit(x_train, y_train)
+        classifier.fit(x_train, y_train)
 
-            acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, classifier, priv,
-                                                                 unfav, fav, 0, i / 100, None)
+        for i in range(crit_region):
+            # ROC metrics
+            results = critical_region_test(x_test, y_test, classifier, priv, unfav, fav, 0, i / 100, None)
+            for m, value in zip(metrics, results):
+                ROC_metrics[m][i] += value
 
-            ROC_accuracy[i] = ROC_accuracy[i] + acc
-            ROC_DIR[i] = ROC_DIR[i] + DIR
-            ROC_samples[i] = ROC_samples[i] + samp
-            ROC_EQ_OP_D[i] = ROC_EQ_OP_D[i] + eq_op_d
-            ROC_ST_P[i] = ROC_ST_P[i] + st_p
+            # CROC metrics
+            results = attribute_swap_and_critical(x_test, y_test, classifier, unpriv, priv, unfav, fav, 0, i / 100, None)
+            for m, value in zip(metrics, results):
+                CROC_metrics[m][i] += value
 
-            acc, DIR, samp, eq_op_d, st_p = attribute_swap_and_critical(x_test, y_test, classifier, unpriv, priv, unfav, fav, 0,
-                                                                        i / 100, None)
+    # Average the metrics
+    for metric_dict in [ROC_metrics, CROC_metrics]:
+        for m in metrics:
+            metric_dict[m] = [x / folds for x in metric_dict[m]]
 
-            CROC_accuracy[i] = CROC_accuracy[i] + acc
-            CROC_DIR[i] = CROC_DIR[i] + DIR
-            CROC_samples[i] = CROC_samples[i] + samp
-            CROC_EQ_OP_D[i] = CROC_EQ_OP_D[i] + eq_op_d
-            CROC_ST_P[i] = CROC_ST_P[i] + st_p
-
-    ROC_accuracy = [x / folds for x in ROC_accuracy]
-    ROC_DIR = [x / folds for x in ROC_DIR]
-    ROC_samples = [x / folds for x in ROC_samples]
-    ROC_EQ_OP_D = [x / folds for x in ROC_EQ_OP_D]
-    ROC_ST_P = [x / folds for x in ROC_ST_P]
-
-    CROC_accuracy = [x / folds for x in CROC_accuracy]
-    CROC_DIR = [x / folds for x in CROC_DIR]
-    CROC_samples = [x / folds for x in CROC_samples]
-    CROC_EQ_OP_D = [x / folds for x in CROC_EQ_OP_D]
-    CROC_ST_P = [x / folds for x in CROC_ST_P]
-
+    # Plot results
     if crit_region != 1:
-        summary_plot(l_values, ROC_accuracy, CROC_accuracy, 'ROC', 'ROC+MOD', 'critical region',
-                     'Accuracy', 'accuracy vs critical region')
-
-        summary_plot(l_values, ROC_DIR, CROC_DIR, 'ROC', 'ROC+MOD', 'critical region',
-                     'DIR', 'DIR vs critical region')
-
-        summary_plot(l_values, ROC_samples, CROC_samples, 'ROC', 'ROC+MOD', 'critical region',
-                     'samples', 'samples vs critical region')
-
-        summary_plot(l_values, ROC_EQ_OP_D, CROC_EQ_OP_D, 'ROC', 'ROC+MOD', 'critical region',
-                     'samples', 'EQ of opportunity vs critical region')
-
-        summary_plot(l_values, ROC_ST_P, CROC_ST_P, 'ROC', 'ROC+MOD', 'critical region', 'samples',
-                     'Statistical Parity vs critical region')
+        for m in metrics:
+            summary_plot(l_values, ROC_metrics[m], CROC_metrics[m], 'ROC', 'ROC+MOD', 'Critical Region size', m, f'{m} vs Critical Region size')
 
 
 def partitioning(lower_bound, upper_bound, classifier_prob):

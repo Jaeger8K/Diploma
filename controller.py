@@ -66,7 +66,7 @@ if int(sys.argv[3]) == 1:
 
     b = preprocess_counterfactual_dataset(dataframe, class_at, prot_at)
 
-    pre_crossval(a, b, sys.argv[2], priv, unpriv, fav, unfav, int(sys.argv[5]), int(sys.argv[4]), 42, int(sys.argv[1]) - 1)
+    pre_crossval(a, b, sys.argv[2], priv, fav, unfav, int(sys.argv[5]), int(sys.argv[4]), 42, int(sys.argv[1]) - 1)
 
 elif int(sys.argv[3]) == 2:
     post_crossval(a, sys.argv[2], priv, unpriv, fav, unfav, int(sys.argv[5]), int(sys.argv[4]), 42)

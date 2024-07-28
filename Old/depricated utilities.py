@@ -364,3 +364,80 @@ def pre_crossval(data, data_c, model , priv, unpriv, fav, unfav, folds, crit_reg
 
         summary_plot(l_values, ROC_ST_P, CROC_ST_P, 'ROC', 'ROC+MOD', 'critical region',
                      'samples', 'Statistical Parity vs critical region')
+
+def post_crossval(data, model, priv, unpriv, fav, unfav, folds, crit_region, seed):
+    x = data[0]
+    y = data[1]
+
+    k_fold = KFold(n_splits=folds, shuffle=True, random_state=seed)
+
+    classifier = choose_classifier(model)
+
+    ROC_accuracy = np.zeros(crit_region).tolist()
+    ROC_DIR = np.zeros(crit_region).tolist()
+    ROC_samples = np.zeros(crit_region).tolist()
+    ROC_EQ_OP_D = np.zeros(crit_region).tolist()
+    ROC_ST_P = np.zeros(crit_region).tolist()
+
+    CROC_accuracy = np.zeros(crit_region).tolist()
+    CROC_DIR = np.zeros(crit_region).tolist()
+    CROC_samples = np.zeros(crit_region).tolist()
+    CROC_EQ_OP_D = np.zeros(crit_region).tolist()
+    CROC_ST_P = np.zeros(crit_region).tolist()
+
+    l_values = [i / 100 for i in range(0, crit_region)]
+
+    for index, (train_indices, test_indices) in enumerate(k_fold.split(x), start=1):
+        print(f"{COLORS.MAGENTA}\nFold:{index}{COLORS.ENDC}")
+
+        x_train, x_test = x.iloc[train_indices], x.iloc[test_indices]
+        y_train, y_test = y.iloc[train_indices], y.iloc[test_indices]
+
+        for i in range(0, crit_region):
+            classifier.fit(x_train, y_train)
+
+            acc, DIR, samp, eq_op_d, st_p = critical_region_test(x_test, y_test, classifier, priv,
+                                                                 unfav, fav, 0, i / 100, None)
+
+            ROC_accuracy[i] = ROC_accuracy[i] + acc
+            ROC_DIR[i] = ROC_DIR[i] + DIR
+            ROC_samples[i] = ROC_samples[i] + samp
+            ROC_EQ_OP_D[i] = ROC_EQ_OP_D[i] + eq_op_d
+            ROC_ST_P[i] = ROC_ST_P[i] + st_p
+
+            acc, DIR, samp, eq_op_d, st_p = attribute_swap_and_critical(x_test, y_test, classifier, unpriv, priv, unfav, fav, 0,
+                                                                        i / 100, None)
+
+            CROC_accuracy[i] = CROC_accuracy[i] + acc
+            CROC_DIR[i] = CROC_DIR[i] + DIR
+            CROC_samples[i] = CROC_samples[i] + samp
+            CROC_EQ_OP_D[i] = CROC_EQ_OP_D[i] + eq_op_d
+            CROC_ST_P[i] = CROC_ST_P[i] + st_p
+
+    ROC_accuracy = [x / folds for x in ROC_accuracy]
+    ROC_DIR = [x / folds for x in ROC_DIR]
+    ROC_samples = [x / folds for x in ROC_samples]
+    ROC_EQ_OP_D = [x / folds for x in ROC_EQ_OP_D]
+    ROC_ST_P = [x / folds for x in ROC_ST_P]
+
+    CROC_accuracy = [x / folds for x in CROC_accuracy]
+    CROC_DIR = [x / folds for x in CROC_DIR]
+    CROC_samples = [x / folds for x in CROC_samples]
+    CROC_EQ_OP_D = [x / folds for x in CROC_EQ_OP_D]
+    CROC_ST_P = [x / folds for x in CROC_ST_P]
+
+    if crit_region != 1:
+        summary_plot(l_values, ROC_accuracy, CROC_accuracy, 'ROC', 'ROC+MOD', 'critical region',
+                     'Accuracy', 'accuracy vs critical region')
+
+        summary_plot(l_values, ROC_DIR, CROC_DIR, 'ROC', 'ROC+MOD', 'critical region',
+                     'DIR', 'DIR vs critical region')
+
+        summary_plot(l_values, ROC_samples, CROC_samples, 'ROC', 'ROC+MOD', 'critical region',
+                     'samples', 'samples vs critical region')
+
+        summary_plot(l_values, ROC_EQ_OP_D, CROC_EQ_OP_D, 'ROC', 'ROC+MOD', 'critical region',
+                     'samples', 'EQ of opportunity vs critical region')
+
+        summary_plot(l_values, ROC_ST_P, CROC_ST_P, 'ROC', 'ROC+MOD', 'critical region', 'samples',
+                     'Statistical Parity vs critical region')
